@@ -2,22 +2,22 @@ import { AppShell } from "../../components/AppShell";
 import { GlassCard, Progress } from "../../components/UI";
 
 const subnav = [
-  { label: "API & Quota", href: "/system-config", active: true },
-  { label: "Audit & Governance", href: "/system-config/audit" },
+  { label: "API & quotas", href: "/system-config", active: true },
+  { label: "Audit & gouvernance", href: "/system-config/audit" },
 ];
 
 export default function SystemConfigPage() {
   return (
-    <AppShell section="system" title="API & Quota Control" searchPlaceholder="Search config..." subnav={subnav}>
+    <AppShell section="system" title="Contrôle API & quotas" searchPlaceholder="Rechercher un paramètre..." subnav={subnav}>
       <div className="quota-layout">
         <div className="quota-main">
-          <GlassCard className="quota-stat"><div className="stat-line"><div><div className="card-label">Quota Burn Rate</div><div className="quota-rate">231 <small>/ min</small></div></div><span className="material-symbols-outlined green">speed</span></div><div className="quota-meta"><span>Current</span><span>Limit: 400</span></div><Progress value={58} tone="amber"/><div className="quota-warning">Warning Threshold Approaching</div></GlassCard>
-          <GlassCard className="quota-stat"><div className="stat-line"><div><div className="card-label">429 Last Hour</div><div className="quota-rate red">2 <small>events</small></div></div><span className="material-symbols-outlined red">warning</span></div><div className="action-card"><span className="red mono">↗ +2 vs prior hr</span></div></GlassCard>
-          <GlassCard className="consumer-card"><div className="card-header"><span className="card-label">Top Consumers</span><span className="green mono">View All</span></div>{[["Ticket Sync Service",145,64,"blue"],["Intelligence Engine Core",68,30,"green"],["User Authentication API",12,8,"muted"],["Asset Discovery Probe",6,4,"muted"]].map(([name,req,val,tone])=><div className="consumer-row" key={String(name)}><div className="consumer-head"><span>{name}</span><code>{req} req/m</code></div><Progress value={Number(val)} tone={tone as "blue"|"green"|"muted"}/></div>)}</GlassCard>
+          <GlassCard className="quota-stat"><div className="stat-line"><div><div className="card-label">Consommation du quota</div><div className="quota-rate">231 <small>/ min</small></div></div><span className="material-symbols-outlined green">speed</span></div><div className="quota-meta"><span>Actuel</span><span>Limite : 400</span></div><Progress value={58} tone="amber"/><div className="quota-warning">Seuil d’alerte proche</div></GlassCard>
+          <GlassCard className="quota-stat"><div className="stat-line"><div><div className="card-label">Erreurs 429 — dernière heure</div><div className="quota-rate red">2 <small>événements</small></div></div><span className="material-symbols-outlined red">warning</span></div><div className="action-card"><span className="red mono">↗ +2 vs heure précédente</span></div></GlassCard>
+          <GlassCard className="consumer-card"><div className="card-header"><span className="card-label">Principaux consommateurs</span><span className="green mono">Voir tout</span></div>{[["Synchronisation des tickets",145,64,"blue"],["Moteur D-Clic Intelligence",68,30,"green"],["API d’authentification",12,8,"muted"],["Découverte des assets",6,4,"muted"]].map(([name,req,val,tone])=><div className="consumer-row" key={String(name)}><div className="consumer-head"><span>{name}</span><code>{req} appels/min</code></div><Progress value={Number(val)} tone={tone as "blue"|"green"|"muted"}/></div>)}</GlassCard>
         </div>
         <aside className="quota-side">
-          <GlassCard className="reserve-card"><div className="reserve-ring"><span className="material-symbols-outlined">lock</span></div><p>Emergency Reserve</p><div className="reserve-value">20%</div><div style={{marginTop:14}}><span className="chip chip-muted">Locked for Critical Ops</span></div></GlassCard>
-          <GlassCard className="kill-card"><div className="card-header"><span className="card-label red">⏻ Kill Switches</span></div>{[["Data Ingestion",true],["Batch Processing",true],["External Webhooks",false]].map(([name,on])=><div className={`kill-row ${on?"":"halted"}`} key={String(name)}><div><strong>{name}</strong><small>{on?"ACTIVE":"HALTED"}</small></div><span className={`toggle ${on?"on":""}`}/></div>)}<div className="kb-footer">ⓘ Action requires Admin+ clearance</div></GlassCard>
+          <GlassCard className="reserve-card"><div className="reserve-ring"><span className="material-symbols-outlined">lock</span></div><p>Réserve d’urgence</p><div className="reserve-value">20 %</div><div style={{marginTop:14}}><span className="chip chip-muted">Réservée aux opérations critiques</span></div></GlassCard>
+          <GlassCard className="kill-card"><div className="card-header"><span className="card-label red">⏻ Arrêts d’urgence</span></div>{[["Ingestion des données",true],["Traitements batch",true],["Webhooks externes",false]].map(([name,on])=><div className={`kill-row ${on?"":"halted"}`} key={String(name)}><div><strong>{name}</strong><small>{on?"ACTIF":"ARRÊTÉ"}</small></div><span className={`toggle ${on?"on":""}`}/></div>)}<div className="kb-footer">ⓘ Action réservée aux administrateurs</div></GlassCard>
         </aside>
       </div>
     </AppShell>
