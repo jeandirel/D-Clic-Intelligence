@@ -1,6 +1,6 @@
 {
   "project": "D-Clic Intelligence",
-  "purpose": "Documentation bootstrap",
+  "purpose": "Documentation produit, architecture, utilisation et tests",
   "files": [
     "CONTRIBUTING.md",
     "README.md",
@@ -17,6 +17,7 @@
     "docs/10-GLOSSARY.md",
     "docs/11-API-GATEWAY-SPEC.md",
     "docs/12-MVP-ACCEPTANCE-CRITERIA.md",
+    "docs/13-GUIDE-FONCTIONNEL-ET-TESTS.md",
     "docs/adr/001-freshservice-source-of-truth.md",
     "docs/adr/002-gateway-mandatory.md",
     "docs/adr/003-human-in-the-loop.md"

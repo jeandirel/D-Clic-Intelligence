@@ -18,17 +18,17 @@ type AppShellProps = {
 };
 
 const nav = [
-  { key: "command", label: "Command Center", href: "/", icon: "dashboard" },
-  { key: "radar", label: "Incident Radar", href: "/incident-radar", icon: "radar" },
-  { key: "neural", label: "Neural Analytics", href: "/neural-analytics", icon: "neurology" },
-  { key: "service", label: "Service Ops", href: "/service-ops", icon: "settings_suggest" },
-  { key: "system", label: "System Config", href: "/system-config", icon: "tune" },
+  { key: "command", label: "Centre de pilotage", href: "/", icon: "dashboard" },
+  { key: "radar", label: "Radar d’incidents", href: "/incident-radar", icon: "radar" },
+  { key: "neural", label: "Analyses prédictives", href: "/neural-analytics", icon: "neurology" },
+  { key: "service", label: "Opérations Service Desk", href: "/service-ops", icon: "settings_suggest" },
+  { key: "system", label: "Administration", href: "/system-config", icon: "tune" },
 ] as const;
 
 export function AppShell({
   section,
   title = "D-Clic Intelligence",
-  searchPlaceholder = "Query Intelligence Engine...",
+  searchPlaceholder = "Rechercher dans D-Clic...",
   subnav,
   children,
 }: AppShellProps) {
@@ -42,7 +42,7 @@ export function AppShell({
           </div>
           <div className="brand-copy">
             <strong>D-Clic AI</strong>
-            <span><i /> Engine Active</span>
+            <span><i /> Moteur opérationnel</span>
           </div>
         </div>
 
@@ -62,11 +62,11 @@ export function AppShell({
         <div className="sidebar-spacer" />
         <button className="deploy-button" type="button">
           <span className="material-symbols-outlined">rocket_launch</span>
-          Deploy Patch
+          Déployer une mise à jour
         </button>
         <div className="sidebar-footer">
           <a href="#"><span className="material-symbols-outlined">help</span>Support</a>
-          <a href="#"><span className="material-symbols-outlined">terminal</span>Logs</a>
+          <a href="#"><span className="material-symbols-outlined">terminal</span>Journaux</a>
         </div>
       </aside>
 
@@ -78,9 +78,9 @@ export function AppShell({
               <span className="material-symbols-outlined">search</span>
               <input aria-label="Recherche" placeholder={searchPlaceholder} />
             </label>
-            <button className="icon-button status-on" aria-label="Live status"><span className="material-symbols-outlined">sensors</span></button>
-            <button className="icon-button" aria-label="AI processor"><span className="material-symbols-outlined">memory</span></button>
-            <button className="icon-button network-dot" aria-label="Integrations"><span className="material-symbols-outlined">hub</span></button>
+            <button className="icon-button status-on" aria-label="État temps réel"><span className="material-symbols-outlined">sensors</span></button>
+            <button className="icon-button" aria-label="Moteur IA"><span className="material-symbols-outlined">memory</span></button>
+            <button className="icon-button network-dot" aria-label="Intégrations"><span className="material-symbols-outlined">hub</span></button>
             <button className="avatar" aria-label="Profil">JD</button>
           </div>
         </header>

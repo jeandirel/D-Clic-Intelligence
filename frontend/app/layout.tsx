@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "D-Clic Intelligence",
-  description: "AI ServiceOps Command Center",
+  description: "Centre de pilotage IA pour les opérations Service Desk et Freshservice",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
