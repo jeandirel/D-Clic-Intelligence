@@ -1,0 +1,30 @@
+{
+  "project": "D-Clic Intelligence",
+  "purpose": "Documentation bootstrap",
+  "files": [
+    "CONTRIBUTING.md",
+    "README.md",
+    "docs/00-START-HERE.md",
+    "docs/01-PRODUCT-VISION.md",
+    "docs/02-SYSTEM-ARCHITECTURE.md",
+    "docs/03-AI-CAPABILITIES.md",
+    "docs/04-FRESHSERVICE-INTEGRATION.md",
+    "docs/05-DATA-ML-ARCHITECTURE.md",
+    "docs/06-SECURITY-GOVERNANCE.md",
+    "docs/07-OBSERVABILITY.md",
+    "docs/08-USER-JOURNEYS.md",
+    "docs/09-ROADMAP.md",
+    "docs/10-GLOSSARY.md",
+    "docs/11-API-GATEWAY-SPEC.md",
+    "docs/12-MVP-ACCEPTANCE-CRITERIA.md",
+    "docs/adr/001-freshservice-source-of-truth.md",
+    "docs/adr/002-gateway-mandatory.md",
+    "docs/adr/003-human-in-the-loop.md"
+  ],
+  "official_sources": [
+    "https://api.freshservice.com/v2/",
+    "https://support.freshservice.com/support/solutions/articles/50000012704-working-with-apis-in-freshservice",
+    "https://support.freshservice.com/support/solutions/articles/50000012678-model-context-protocol-mcp-integration-in-freshservice",
+    "https://support.freshservice.com/support/solutions/articles/50000014074-data-usage-analytics"
+  ]
+}
