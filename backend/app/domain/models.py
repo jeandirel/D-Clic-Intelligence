@@ -18,8 +18,8 @@ class ActionRisk(str, Enum):
 
 
 class ActionCommand(BaseModel):
-    command_id: str = Field(min_length=3)
-    actor_id: str = Field(min_length=1)
+    command_id: str = Field(min_length=3, max_length=128)
+    actor_id: str = Field(min_length=1, max_length=128)
     action: str
     resource_id: int
     payload: dict[str, Any] = Field(default_factory=dict)
@@ -27,6 +27,7 @@ class ActionCommand(BaseModel):
     approved: bool = False
     reason: str = ""
     recommendation_id: str | None = None
+    correlation_id: str | None = Field(default=None, max_length=128)
 
 
 class PolicyResult(BaseModel):
