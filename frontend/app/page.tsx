@@ -1,61 +1,59 @@
-const kpis = [
-  { label: "Tickets ouverts", value: "1 284", delta: "+3,8%" },
-  { label: "SLA à risque", value: "74", delta: "19 critiques" },
-  { label: "Clusters détectés", value: "7", delta: "3 nouveaux" },
-  { label: "Actions IA", value: "312", delta: "91% approuvées" },
-];
+import { AppShell } from "../components/AppShell";
+import { Chip, GlassCard, Progress } from "../components/UI";
 
-const priorities = [
-  { id: "INC-18492", title: "VPN impossible après changement de mot de passe", risk: 94, team: "Workplace" },
-  { id: "INC-18471", title: "Outlook ne démarre plus sur plusieurs postes", risk: 88, team: "Support N2" },
-  { id: "INC-18433", title: "Accès ERP intermittent — site Rouen", risk: 82, team: "Réseau" },
-];
+const workload = [
+  ["L1 Support", 92, "amber"],
+  ["Network Ops", 45, "green"],
+  ["Cloud Arch", 68, "blue"],
+  ["SecOps", 98, "red"],
+] as const;
 
-export default function Home() {
+export default function CommandCenterPage() {
   return (
-    <main className="shell">
-      <aside className="sidebar">
-        <div className="brand"><span className="brandMark">D</span><div><strong>D-Clic</strong><small>Intelligence</small></div></div>
-        <nav>
-          {['Command Center','Ticket Intelligence','SLA Risk','Incident Radar','Workload','Knowledge','AI Actions','API Control','Models','Audit'].map((item, index) => (
-            <a className={index === 0 ? 'active' : ''} href="#" key={item}><span>{String(index + 1).padStart(2,'0')}</span>{item}</a>
-          ))}
-        </nav>
-        <div className="sideFooter"><span className="statusDot" /> Freshservice Gateway prêt</div>
-      </aside>
+    <AppShell section="command">
+      <div className="dashboard-grid">
+        <GlassCard className="health-card span-4">
+          <div className="card-header"><span className="card-label">Global Health Score</span><span className="material-symbols-outlined blue">verified_user</span></div>
+          <div className="health-ring-wrap"><div className="health-ring"><strong>92<small>%</small></strong></div></div>
+          <div className="health-status">↗ System Stable</div>
+        </GlassCard>
 
-      <section className="content">
-        <header className="topbar">
-          <div><p className="eyebrow">SERVICEOPS / LIVE COMMAND</p><h1>Command Center</h1></div>
-          <div className="topActions"><button className="ghost">Mode observation</button><button className="primary">+ Nouvelle analyse</button></div>
-        </header>
+        <GlassCard className="sla-card span-8">
+          <div className="card-header"><div><span className="card-label">SLA Risk Pulse</span><h3 className="sla-title"><strong>19</strong> Tickets at &gt;80% Risk</h3></div><span className="material-symbols-outlined amber">warning</span></div>
+          <div className="chart-area">
+            <svg viewBox="0 0 720 220" preserveAspectRatio="none" aria-hidden="true">
+              <defs><linearGradient id="amberFill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#ffb800" stopOpacity=".35"/><stop offset="1" stopColor="#ffb800" stopOpacity="0"/></linearGradient></defs>
+              <path d="M0,170 C100,115 200,135 290,166 C390,201 460,157 520,112 C590,58 663,0 710,25 C731,38 721,77 720,92 L720,220 L0,220 Z" fill="url(#amberFill)"/>
+              <path d="M0,170 C100,115 200,135 290,166 C390,201 460,157 520,112 C590,58 663,0 710,25 C731,38 721,77 720,92" fill="none" stroke="#ffb800" strokeWidth="6" strokeLinecap="round"/>
+            </svg>
+          </div>
+          <div className="chart-axis"><span>-12h</span><span>-6h</span><span>Now</span></div>
+        </GlassCard>
 
-        <section className="hero">
-          <div><span className="badge">AI SERVICEOPS</span><h2>Le Service Desk ne doit plus seulement réagir.<br/><em>Il doit anticiper.</em></h2><p>D-Clic observe Freshservice, détecte les risques, recommande la prochaine action et garde l’humain au contrôle.</p></div>
-          <div className="heroScore"><span>État opérationnel</span><strong>92</strong><small>/ 100 — Stable</small></div>
-        </section>
+        <div className="span-8">
+          <div className="section-label"><span className="material-symbols-outlined">lightbulb</span> Active AI Recommendations</div>
+          <div className="dashboard-grid">
+            <GlassCard className="recommendation-card span-6">
+              <div><Chip tone="red">Critical Fix</Chip><h4>Database Index Fragmentation</h4><p>Cluster Alpha-9 is showing 42% fragmentation. Rebuilding indexes will reduce the current query-latency cascade.</p></div>
+              <div className="recommendation-footer"><span className="confidence">Confidence: 98%</span><button className="mini-apply">Apply</button></div>
+            </GlassCard>
+            <GlassCard className="recommendation-card span-6">
+              <div><Chip tone="blue">Optimization</Chip><h4>Auto-Scale Node Pool</h4><p>Current load indicates a typical Friday spike approaching. Pre-scaling workers can protect first-response latency.</p></div>
+              <div className="recommendation-footer"><span className="confidence">Confidence: 85%</span><button className="mini-apply">Apply</button></div>
+            </GlassCard>
+          </div>
+        </div>
 
-        <section className="grid4">
-          {kpis.map((kpi) => <article className="metric" key={kpi.label}><span>{kpi.label}</span><strong>{kpi.value}</strong><small>{kpi.delta}</small></article>)}
-        </section>
+        <GlassCard className="workload-card span-4">
+          <div className="card-header"><span className="card-label">Workload Distribution</span><span className="material-symbols-outlined muted">groups</span></div>
+          {workload.map(([name, value, tone]) => <div className="work-row" key={name}><div className="work-row-head"><span>{name}</span><span className={tone === "amber" ? "amber" : tone === "red" ? "red" : tone === "blue" ? "blue" : "green"}>{value}%</span></div><Progress value={value} tone={tone}/></div>)}
+        </GlassCard>
 
-        <section className="mainGrid">
-          <article className="panel priorityPanel">
-            <div className="panelHead"><div><span className="eyebrow">NEXT BEST ACTION</span><h3>Priorités recommandées</h3></div><button className="ghost small">Voir tout</button></div>
-            <div className="ticketList">
-              {priorities.map((ticket) => <div className="ticket" key={ticket.id}><div className="risk"><strong>{ticket.risk}%</strong><span>risque SLA</span></div><div className="ticketBody"><span>{ticket.id} · {ticket.team}</span><h4>{ticket.title}</h4><p>Analyse contextuelle disponible · validation humaine requise avant action.</p></div><button className="arrow">→</button></div>)}
-            </div>
-          </article>
-
-          <article className="panel radar">
-            <div className="panelHead"><div><span className="eyebrow">INCIDENT RADAR</span><h3>Signal émergent</h3></div><span className="live">LIVE</span></div>
-            <div className="radarVisual"><div className="orbit o1"/><div className="orbit o2"/><div className="pulse"/><span className="node n1"/><span className="node n2"/><span className="node n3"/></div>
-            <div className="signal"><strong>VPN / Rouen</strong><span>47 tickets similaires · +243%</span><p>Corrélation probable avec un changement réseau récent.</p><button className="primary full">Analyser le cluster</button></div>
-          </article>
-        </section>
-
-        <section className="commandBar"><div><span className="spark">✦</span><div><strong>Demander à D-Clic</strong><p>« Trouve les tickets VPN critiques et propose un plan d’action. »</p></div></div><button>Exécuter l’analyse →</button></section>
-      </section>
-    </main>
+        <GlassCard className="radar-highlight span-12">
+          <Chip tone="muted">◎ Incident Radar Highlights</Chip>
+          <span className="radar-dot a"/><span className="radar-dot b"/><span className="radar-dot c"/>
+        </GlassCard>
+      </div>
+    </AppShell>
   );
 }
