@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from app.core.config import Settings
 from app.data.models import Base
@@ -28,7 +34,7 @@ class Database:
             async with self.session_factory() as session:
                 await session.execute(text("SELECT 1"))
             return True
-        except Exception:
+        except SQLAlchemyError:
             return False
 
     async def close(self) -> None:

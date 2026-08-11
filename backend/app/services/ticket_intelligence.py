@@ -1,5 +1,5 @@
-from html import unescape
 import re
+from html import unescape
 
 from app.domain.models import TicketIntelligence
 

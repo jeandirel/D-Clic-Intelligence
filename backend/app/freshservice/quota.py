@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from redis.asyncio import Redis
+from redis.exceptions import RedisError
 
 from app.core.config import Settings
 
@@ -41,11 +42,11 @@ class FreshserviceQuotaManager:
         self.redis = redis
 
     def _key(self) -> str:
-        minute = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
+        minute = datetime.now(UTC).strftime("%Y%m%d%H%M")
         return f"dclic:freshservice:quota:{minute}"
 
     def _retry_after(self) -> int:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return max(1, 60 - now.second)
 
     async def acquire(self, *, cost: int = 1, emergency: bool = False) -> int:
@@ -78,5 +79,5 @@ class FreshserviceQuotaManager:
     async def healthcheck(self) -> bool:
         try:
             return bool(await self.redis.ping())
-        except Exception:
+        except RedisError:
             return False

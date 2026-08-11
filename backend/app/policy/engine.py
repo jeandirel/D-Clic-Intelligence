@@ -1,11 +1,15 @@
+from typing import ClassVar
+
 from app.domain.models import ActionCommand, ActionRisk, PolicyDecision, PolicyResult
 
 
 class PolicyEngine:
     """Deterministic authorization layer. AI confidence never grants permission by itself."""
 
-    _always_blocked = {"asset.delete", "user.delete"}
-    _approval_actions = {"ticket.close", "ticket.delete", "problem.create", "change.update"}
+    _always_blocked: ClassVar[frozenset[str]] = frozenset({"asset.delete", "user.delete"})
+    _approval_actions: ClassVar[frozenset[str]] = frozenset(
+        {"ticket.close", "ticket.delete", "problem.create", "change.update"}
+    )
 
     def evaluate(self, command: ActionCommand) -> PolicyResult:
         if command.action in self._always_blocked:
@@ -15,13 +19,16 @@ class PolicyEngine:
                 reason="Destructive action is blocked in the bootstrap policy.",
             )
 
-        if command.risk in {ActionRisk.HIGH, ActionRisk.CRITICAL} or command.action in self._approval_actions:
-            if not command.approved:
-                return PolicyResult(
-                    decision=PolicyDecision.REQUIRE_APPROVAL,
-                    policy_id="P-HITL-001",
-                    reason="High-impact action requires explicit human approval.",
-                )
+        requires_approval = (
+            command.risk in {ActionRisk.HIGH, ActionRisk.CRITICAL}
+            or command.action in self._approval_actions
+        )
+        if requires_approval and not command.approved:
+            return PolicyResult(
+                decision=PolicyDecision.REQUIRE_APPROVAL,
+                policy_id="P-HITL-001",
+                reason="High-impact action requires explicit human approval.",
+            )
 
         return PolicyResult(
             decision=PolicyDecision.ALLOW,
