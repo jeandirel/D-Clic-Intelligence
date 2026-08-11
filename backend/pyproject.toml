@@ -1,6 +1,6 @@
 [project]
 name = "dclic-intelligence-backend"
-version = "0.1.0"
+version = "0.2.0"
 description = "D-Clic Intelligence backend and Freshservice control plane"
 requires-python = ">=3.11"
 dependencies = [
@@ -10,15 +10,16 @@ dependencies = [
   "pydantic-settings>=2.6,<3.0",
   "sqlalchemy>=2.0,<3.0",
   "psycopg[binary]>=3.2,<4.0",
-  "redis>=5,<7",
+  "redis>=5,<9",
   "prometheus-client>=0.21,<1.0"
 ]
 
 [project.optional-dependencies]
 dev = [
   "pytest>=8,<9",
-  "pytest-asyncio>=0.24,<1.0",
-  "ruff>=0.8,<1.0"
+  "pytest-asyncio>=0.24,<2.0",
+  "ruff>=0.8,<1.0",
+  "aiosqlite>=0.20,<1.0"
 ]
 
 [tool.pytest.ini_options]
