@@ -1,37 +1,51 @@
-# 14 — Mode démonstration : workflows de bout en bout
+# 14 — Démo fonctionnelle : bac à sable D-Clic
 
 ## Objectif
 
-Le mode démonstration permet de présenter la vision complète de D-Clic Intelligence sans connecter ni modifier le Freshservice de production.
+`/demo` n’est plus un storyboard. C’est un **bac à sable interactif** : chaque bouton métier modifie réellement l’état affiché dans le navigateur afin de montrer le comportement attendu de D-Clic Intelligence.
 
-**Règle absolue de la démo :** toutes les données, prédictions, actions, appels API, validations et traces affichés par `/demo` sont simulés côté interface. Le mode démo n’effectue aucune écriture Freshservice.
+**Règle absolue :** toutes les données, prédictions, validations, exécutions et traces sont simulées localement. La démo n’effectue aucun appel ni aucune écriture vers Freshservice.
 
 ## Accès
 
 - URL : `/demo`
-- Entrée visible dans la barre latérale : **Lancer la démonstration**
-- Badge permanent : **DÉMO · DONNÉES SIMULÉES**
+- Entrée sidebar : **Lancer la démonstration**
+- En-tête : **BAC À SABLE FONCTIONNEL**
+- `external_write=false` affiché pendant toute la démonstration.
 
-## Fonctionnement
+## Ce qui est réellement interactif
 
-Pour chaque scénario :
+Pour chaque scénario, l’utilisateur clique sur des **actions métier contextualisées**. Il n’existe plus de bouton générique « Étape suivante ».
 
-1. sélectionner le workflow ;
-2. cliquer **Démarrer ce workflow** ;
-3. avancer avec **Étape suivante** ;
-4. expliquer l’acteur, l’action, le résultat et la preuve affichés ;
-5. ouvrir l’écran métier correspondant si nécessaire ;
-6. cliquer **Réinitialiser** pour rejouer le scénario.
+Exemples :
 
-Chaque étape génère un identifiant de corrélation fictif de la forme :
+- **Ticket** : `Analyser le ticket` → `Prévisualiser les modifications` → `Valider et appliquer en démo`. La priorité, le groupe et le risque SLA changent réellement dans l’état simulé.
+- **SLA** : `Calculer le risque SLA` → `Simuler une réassignation` → `Approuver le scénario`. Le risque passe de 91 % à 42 % dans la simulation.
+- **Incident Radar** : `Injecter le pic simulé` → `Qualifier l’incident majeur` → `Promouvoir en Problem`. Un `PRB-DEMO-104` apparaît et 47 incidents sont rattachés fictivement.
+- **Charge** : `Simuler le rééquilibrage` puis `Appliquer au bac à sable`. Les KPI de charge des équipes changent.
+- **Connaissance** : interrogation RAG, détection de lacune puis génération d’un article `KB-DEMO-220`.
+- **Actions IA** : Policy Engine → approbation humaine → Gateway démo → état `VERIFIED`.
+- **Quota API** : montée de consommation → 429 simulé → `Retry-After` → reprise contrôlée.
+- **Model Ops** : shadow test → release gates → promotion du challenger dans la registry simulée.
+- **Self-service** : diagnostic → échec du self-service → création d’un ticket enrichi fictif.
+- **Change Management** : calcul du risque → mitigation → Post Change Watch.
+- **Résilience** : timeout → 5xx → circuit breaker → double-clic dédupliqué.
 
-```text
-correlation_id=demo-<workflow>-<step>
-external_write=false
-status=SIMULATED | VERIFIED
-```
+## Comportement de l’interface
 
-## Workflows couverts
+À chaque action :
+
+1. le bouton affiche brièvement **Simulation en cours…** ;
+2. les KPI changent ;
+3. le tableau métier est remplacé par le nouvel état ;
+4. le statut du scénario évolue ;
+5. le journal de démonstration ajoute un événement horodaté ;
+6. un `correlation_id` fictif est affiché ;
+7. `external_write=false` reste visible.
+
+Le bouton **Réinitialiser** permet de rejouer immédiatement le scénario devant un interlocuteur.
+
+## Les 16 scénarios disponibles
 
 1. Pilotage global du Service Desk
 2. Traitement intelligent d’un ticket
@@ -39,7 +53,7 @@ status=SIMULATED | VERIFIED
 4. Prévention d’un dépassement SLA
 5. Détection d’un incident émergent
 6. Classement des causes probables
-7. Rééquilibrage de la charge des équipes
+7. Rééquilibrage de la charge
 8. Connaissance, RAG et lacunes documentaires
 9. Actions IA et validation humaine
 10. Gestion des quotas API et erreur 429
@@ -50,44 +64,19 @@ status=SIMULATED | VERIFIED
 15. Audit et gouvernance de bout en bout
 16. Résilience : timeout, 5xx et double-clic
 
-## Ce que la démonstration doit faire comprendre
+## Démo manager recommandée
 
-### Freshservice reste la source de vérité
-D-Clic ne remplace pas Freshservice. Il analyse, anticipe, recommande, gouverne et orchestre autour de Freshservice.
+Pour une présentation courte :
 
-### L’IA ne possède pas les permissions
-Un score de confiance élevé ne donne jamais le droit d’exécuter une action. Les permissions relèvent du Policy Engine et de la validation humaine quand elle est requise.
+1. Traitement intelligent d’un ticket
+2. Prévention SLA
+3. Incident émergent
+4. Actions IA & validation humaine
+5. Gestion du quota API
+6. Audit
 
-### Le Gateway protège Freshservice
-Le Gateway centralise quota, retry, 429, idempotence, vérification et audit.
+Cette séquence permet de montrer le cycle complet : **observer → analyser → prédire → recommander → gouverner → simuler l’exécution → vérifier → auditer**.
 
-### Chaque décision est explicable au niveau métier
-La présentation ne doit pas exposer une chaîne de pensée de modèle. Elle montre les données d’entrée utiles, les facteurs métier, la décision structurée et la preuve/audit.
+## Sécurité
 
-## Ordre recommandé pour une démonstration à un manager
-
-### Démo courte — 7 à 10 minutes
-
-1. Pilotage global
-2. Traitement intelligent d’un ticket
-3. Prévention SLA
-4. Incident émergent
-5. Actions IA & validation humaine
-6. Contrôle quota API
-7. Audit
-
-### Démo complète — atelier produit
-
-Parcourir les 16 workflows et ouvrir l’écran métier après chaque scénario.
-
-## Validation
-
-Le mode démonstration est considéré comme fonctionnel si :
-
-- les 16 scénarios sont sélectionnables ;
-- chaque scénario peut être démarré, avancé et réinitialisé ;
-- chaque étape affiche acteur, action, résultat et preuve ;
-- le lien vers l’écran métier fonctionne ;
-- aucune étape n’appelle le backend Freshservice ;
-- le build Next.js réussit ;
-- les protections backend existantes restent inchangées.
+Le mode démo est volontairement isolé du backend d’exécution. `FRESHSERVICE_WRITE_ENABLED=false` reste la valeur sûre par défaut et aucun scénario du bac à sable ne dépend d’une clé API Freshservice.

@@ -3,7 +3,7 @@ import { DemoCenter } from "../../components/DemoCenter";
 
 export default function DemoPage() {
   return (
-    <AppShell section="command" title="Mode démonstration" searchPlaceholder="Rechercher un scénario...">
+    <AppShell section="command" title="Démo fonctionnelle" searchPlaceholder="Rechercher un scénario...">
       <DemoCenter />
     </AppShell>
   );
