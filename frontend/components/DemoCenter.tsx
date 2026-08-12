@@ -4,368 +4,132 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import styles from "../app/demo/demo.module.css";
 
-type Tone = "green" | "amber" | "blue" | "red" | "muted";
+type Tone="green"|"amber"|"blue"|"red"|"muted";
+type Metric=[string,string,Tone?];
+type Row=[string,string,string?];
+type Snap={status:string;tone:Tone;headline:string;metrics:Metric[];rows:Row[];action?:string;icon?:string;audit?:string};
+type Flow={id:string;title:string;domain:string;audience:string;objective:string;route:string;icon:string;snaps:Snap[]};
+type Log={id:string;action:string;message:string;at:string};
 
-type DemoStep = {
-  title: string;
-  actor: string;
-  action: string;
-  result: string;
-  proof: string;
-  tone?: Tone;
-};
+const s=(status:string,tone:Tone,headline:string,metrics:Metric[],rows:Row[],action?:string,icon?:string,audit?:string):Snap=>({status,tone,headline,metrics,rows,action,icon,audit});
+const f=(id:string,title:string,domain:string,audience:string,objective:string,route:string,icon:string,snaps:Snap[]):Flow=>({id,title,domain,audience,objective,route,icon,snaps});
 
-type Workflow = {
-  id: string;
-  title: string;
-  domain: string;
-  audience: string;
-  objective: string;
-  route: string;
-  icon: string;
-  steps: DemoStep[];
-};
+const flows:Flow[]=[
+f("pilotage","Pilotage global du Service Desk","Management ITSM","Responsable Service Desk / DSI","Consolider les signaux et prioriser ce qui mérite une décision.","/","dashboard",[
+s("En attente","muted","Vue de pilotage non rafraîchie",[["Santé","—"],["SLA à risque","—"],["Clusters","—"],["Charge","—"]],[["Source","Freshservice simulé + télémétrie"],["Dernière consolidation","Non exécutée"]],"Actualiser les signaux","sync","Consolidation terminée"),
+s("Analysé","blue","3 situations prioritaires détectées",[["Santé","92 %","green"],["SLA >80 %","19","amber"],["Clusters","3","red"],["Charge","78 %","amber"]],[["Priorité 1","Cluster VPN Europe","47 tickets"],["Priorité 2","SLA Workplace","7 tickets >90 %"],["Priorité 3","SecOps saturé","98 %"]],"Générer les recommandations","auto_awesome","Recommandations générées"),
+s("Prêt à décider","green","Plan d’action manager disponible",[["Actions","3","green"],["Validation humaine","3/3","blue"],["Impact","Élevé","amber"],["Écriture réelle","0","green"]],[["Incident","Qualifier le cluster VPN","Confiance 89 %"],["SLA","Rééquilibrer 14 tickets","Gain projeté +14 %"],["Capacité","Suspendre 21 tâches batch","+38 min de marge"]])]),
 
-const workflows: Workflow[] = [
-  {
-    id: "pilotage",
-    title: "Pilotage global du Service Desk",
-    domain: "Management ITSM",
-    audience: "Responsable Service Desk / DSI",
-    objective: "Comprendre en moins d’une minute l’état opérationnel, les risques SLA, les incidents émergents et les recommandations prioritaires.",
-    route: "/",
-    icon: "dashboard",
-    steps: [
-      { title: "Consolidation des signaux", actor: "D-Clic", action: "Agrège tickets, SLA, charge, incidents et télémétrie API simulés.", result: "Score de santé : 92 %. 19 tickets à risque SLA > 80 %.", proof: "KPI du Centre de pilotage", tone: "blue" },
-      { title: "Priorisation", actor: "Moteur de décision", action: "Classe les risques par impact, urgence et temps restant.", result: "3 situations nécessitent une attention immédiate.", proof: "Liste des recommandations actives", tone: "amber" },
-      { title: "Recommandation", actor: "IA", action: "Propose des actions sans les exécuter.", result: "Rééquilibrage de file et investigation VPN recommandés.", proof: "Carte action + confiance", tone: "green" },
-      { title: "Décision manager", actor: "Manager", action: "Ouvre le scénario concerné pour analyser les détails.", result: "Navigation vers SLA, Radar ou Charge & capacité.", proof: "Traçabilité de la consultation", tone: "green" },
-    ],
-  },
-  {
-    id: "ticket",
-    title: "Traitement intelligent d’un ticket",
-    domain: "Service Desk",
-    audience: "Agent support",
-    objective: "Faire comprendre rapidement un ticket, proposer une classification, détecter les doublons et préparer la prochaine action.",
-    route: "/service-ops",
-    icon: "confirmation_number",
-    steps: [
-      { title: "Lecture du ticket", actor: "Agent", action: "Ouvre INC-9942 dans D-Clic.", result: "Le sujet, le contexte, l’historique et le SLA sont chargés.", proof: "Vue Intelligence ticket", tone: "blue" },
-      { title: "Résumé IA", actor: "IA", action: "Synthétise problème, contexte, actions déjà menées et prochaine étape.", result: "Latence du portail d’authentification identifiée comme problème principal.", proof: "Bloc Résumé IA", tone: "green" },
-      { title: "Classification & doublons", actor: "IA", action: "Calcule Top-3 groupe/catégorie et rapproche les tickets similaires.", result: "IAM 98,4 % ; 3 tickets similaires détectés.", proof: "Scores + liens vers incidents similaires", tone: "blue" },
-      { title: "Prévisualisation", actor: "Agent", action: "Demande à voir les changements avant application.", result: "Groupe, priorité et note interne affichés en avant/après.", proof: "Diff de prévisualisation", tone: "amber" },
-      { title: "Validation", actor: "Policy Engine", action: "Vérifie le niveau de risque et les droits.", result: "Action classée L2 : validation humaine requise.", proof: "Décision de politique simulée", tone: "amber" },
-    ],
-  },
-  {
-    id: "reponse",
-    title: "Réponse assistée à l’utilisateur",
-    domain: "Service Desk",
-    audience: "Agent support",
-    objective: "Préparer une réponse claire et sourcée à partir du ticket et de la base de connaissances.",
-    route: "/service-ops",
-    icon: "forum",
-    steps: [
-      { title: "Analyse de la demande", actor: "IA", action: "Identifie l’intention et les informations déjà fournies.", result: "Problème VPN après renouvellement de certificat.", proof: "Intention + résumé", tone: "blue" },
-      { title: "Recherche documentaire", actor: "RAG", action: "Recherche uniquement dans les sources autorisées.", result: "KB-9812 et KB-4401 retenus avec 94 % et 88 % de pertinence.", proof: "Sources citées", tone: "green" },
-      { title: "Brouillon de réponse", actor: "IA", action: "Génère une réponse courte avec étapes de diagnostic.", result: "Brouillon prêt, aucune réponse envoyée automatiquement.", proof: "Brouillon éditable", tone: "green" },
-      { title: "Validation humaine", actor: "Agent", action: "Relit, modifie puis confirme l’envoi.", result: "Réponse approuvée dans le scénario de démonstration.", proof: "Événement approval.granted", tone: "amber" },
-    ],
-  },
-  {
-    id: "sla",
-    title: "Prévention d’un dépassement SLA",
-    domain: "SLA Management",
-    audience: "Manager / Team leader",
-    objective: "Montrer comment D-Clic anticipe un risque de dépassement et simule une action corrective.",
-    route: "/neural-analytics",
-    icon: "timer",
-    steps: [
-      { title: "Détection du risque", actor: "Modèle SLA", action: "Évalue le risque à partir du temps restant, backlog et historique.", result: "INC-9942 : 91 % de risque, 1 h 14 restante.", proof: "Score calibré + facteurs", tone: "red" },
-      { title: "Explication", actor: "D-Clic", action: "Présente les facteurs les plus influents.", result: "Backlog élevé, 2 réassignations et catégorie historiquement lente.", proof: "Feature influence", tone: "amber" },
-      { title: "Simulation", actor: "Moteur de décision", action: "Simule un transfert vers une équipe disponible.", result: "Risque estimé après action : 42 %.", proof: "Comparaison avant/après", tone: "blue" },
-      { title: "Validation", actor: "Manager", action: "Accepte ou refuse la recommandation.", result: "Scénario accepté ; commande simulée et auditée.", proof: "Timeline de décision", tone: "green" },
-    ],
-  },
-  {
-    id: "incident",
-    title: "Détection d’un incident émergent",
-    domain: "Incident & Problem Management",
-    audience: "Incident Manager / N2-N3",
-    objective: "Détecter un pic anormal de tickets et proposer la création d’un problème sans affirmer une cause non prouvée.",
-    route: "/incident-radar",
-    icon: "radar",
-    steps: [
-      { title: "Détection d’anomalie", actor: "Radar", action: "Compare le volume VPN à la baseline historique.", result: "47 tickets liés ; hausse anormale détectée.", proof: "Cluster temporel et volumétrique", tone: "amber" },
-      { title: "Clustering", actor: "IA", action: "Regroupe les tickets par contenu, temps, service, site et actifs.", result: "Cluster principal : accès VPN région Europe.", proof: "Vue de clustering", tone: "blue" },
-      { title: "Qualification majeur", actor: "Moteur incident", action: "Évalue utilisateurs, sites, criticité et vitesse d’arrivée.", result: "Candidat incident majeur : score 0,89.", proof: "Score et facteurs", tone: "red" },
-      { title: "Proposition", actor: "D-Clic", action: "Prépare la promotion en Problem et le rattachement des incidents.", result: "47 associations préparées, aucune écriture réelle.", proof: "Preview de l’action", tone: "green" },
-    ],
-  },
-  {
-    id: "root-cause",
-    title: "Classement des causes probables",
-    domain: "Problem Management",
-    audience: "Incident Manager / Expert technique",
-    objective: "Présenter des causes candidates avec preuves plutôt qu’une cause unique inventée.",
-    route: "/incident-radar",
-    icon: "account_tree",
-    steps: [
-      { title: "Collecte des signaux", actor: "D-Clic", action: "Croise changements récents, actifs, dépendances et erreurs similaires.", result: "3 causes candidates identifiées.", proof: "Evidence bundle", tone: "blue" },
-      { title: "Classement", actor: "Moteur de corrélation", action: "Calcule un score de plausibilité.", result: "CHG-1234 : 88 %, INC-8992 : 42 %, événement système : 15 %.", proof: "Root Cause Ranking", tone: "amber" },
-      { title: "Vérification experte", actor: "Expert", action: "Consulte les éléments de preuve avant décision.", result: "CHG-1234 retenu comme piste d’investigation, pas comme vérité automatique.", proof: "Décision humaine", tone: "green" },
-      { title: "Suivi", actor: "Incident Manager", action: "Active un mode de surveillance sur les tickets associés.", result: "Watch mode simulé activé.", proof: "Événement incident.watch.started", tone: "green" },
-    ],
-  },
-  {
-    id: "workload",
-    title: "Rééquilibrage de la charge des équipes",
-    domain: "Workforce / Service Operations",
-    audience: "Manager Service Desk",
-    objective: "Prévoir la saturation et recommander une redistribution équitable des tickets.",
-    route: "/service-ops/workload",
-    icon: "groups",
-    steps: [
-      { title: "Mesure de charge", actor: "D-Clic", action: "Calcule une charge pondérée par complexité, urgence et temps attendu.", result: "L1 : 92 %, SecOps : 98 %, Réseau : 45 %.", proof: "Heatmap + scores pondérés", tone: "amber" },
-      { title: "Prévision", actor: "Forecast", action: "Projette la charge sur 12 heures.", result: "Pic attendu à 16 h 20 : 91 % global.", proof: "Prévision temporelle", tone: "blue" },
-      { title: "Simulation", actor: "Moteur de capacité", action: "Teste plusieurs redistributions compatibles avec les compétences.", result: "14 tickets simples transférables vers Workplace.", proof: "Scénario de rebalance", tone: "green" },
-      { title: "Résultat projeté", actor: "D-Clic", action: "Compare la situation avant/après.", result: "+14 % de conformité SLA projetée, sans surcharge de l’équipe cible.", proof: "KPI simulé", tone: "green" },
-    ],
-  },
-  {
-    id: "knowledge",
-    title: "Connaissance, RAG et lacunes documentaires",
-    domain: "Knowledge Management",
-    audience: "Knowledge Manager / Agent",
-    objective: "Montrer la recherche sourcée et la création gouvernée d’un article à partir de résolutions répétées.",
-    route: "/service-ops/knowledge",
-    icon: "library_books",
-    steps: [
-      { title: "Recherche RAG", actor: "RAG", action: "Recherche dans KB validée, procédures et résolutions autorisées.", result: "Réponse construite avec sources et scores de pertinence.", proof: "Sources + grounding", tone: "blue" },
-      { title: "Détection de lacune", actor: "Knowledge Intelligence", action: "Repère un motif récurrent sans article officiel.", result: "34 résolutions VPN similaires, aucun article validé.", proof: "Knowledge Gap Detector", tone: "amber" },
-      { title: "Génération de brouillon", actor: "IA", action: "Prépare titre, symptômes, cause, résolution, vérification et rollback.", result: "Brouillon prêt pour revue experte.", proof: "Draft d’article", tone: "green" },
-      { title: "Gouvernance", actor: "Knowledge Manager", action: "Valide le contenu avant publication.", result: "Publication simulée ; l’IA ne publie pas seule.", proof: "Approval + audit", tone: "green" },
-    ],
-  },
-  {
-    id: "actions",
-    title: "Actions IA et validation humaine",
-    domain: "Gouvernance IA",
-    audience: "Manager / Administrateur",
-    objective: "Illustrer le principe : confiance ≠ permission, avec preview, policy, approbation, exécution et vérification.",
-    route: "/service-ops/actions",
-    icon: "approval",
-    steps: [
-      { title: "Recommandation", actor: "IA", action: "Propose de réassigner 14 tickets à risque SLA.", result: "Confiance : 94 %, risque métier : moyen.", proof: "Recommendation ID rec-demo-014", tone: "blue" },
-      { title: "Policy Engine", actor: "Policy Engine", action: "Évalue droits, nature de l’action et niveau d’autonomie.", result: "L2 : validation humaine obligatoire.", proof: "Policy P-HITL-MED", tone: "amber" },
-      { title: "Approbation", actor: "Manager", action: "Inspecte l’avant/après puis approuve.", result: "Commande cmd-demo-014 autorisée.", proof: "approval.granted", tone: "green" },
-      { title: "Exécution simulée", actor: "Gateway DEMO", action: "Simule l’appel Freshservice sans requête externe.", result: "Statut SUCCEEDED simulé ; 0 écriture réelle.", proof: "dry_run=true", tone: "green" },
-      { title: "Vérification", actor: "D-Clic", action: "Simule le read-after-write et clôt la trace.", result: "État vérifié dans le scénario fictif.", proof: "command.verified", tone: "green" },
-    ],
-  },
-  {
-    id: "quota",
-    title: "Gestion des quotas API et erreur 429",
-    domain: "Administration / Freshservice Gateway",
-    audience: "Admin / Ops",
-    objective: "Montrer comment D-Clic protège le quota partagé Freshservice et dégrade proprement les traitements non urgents.",
-    route: "/system-config",
-    icon: "speed",
-    steps: [
-      { title: "Suivi du budget", actor: "API Guardian", action: "Mesure consommation, réserve d’urgence et principaux consommateurs.", result: "231 appels/min sur limite simulée 400 ; réserve 20 %.", proof: "Contrôle API & quotas", tone: "blue" },
-      { title: "Seuil d’alerte", actor: "Quota Manager", action: "Détecte une consommation proche du seuil de sécurité.", result: "Batch et synchronisations passent en priorité basse.", proof: "Politique de file", tone: "amber" },
-      { title: "Simulation 429", actor: "Freshservice simulé", action: "Retourne 429 avec Retry-After: 42.", result: "Aucun retry immédiat ; opérations non urgentes mises en attente.", proof: "retry_after_seconds=42", tone: "red" },
-      { title: "Reprise contrôlée", actor: "Gateway", action: "Relance après la fenêtre et conserve l’idempotence.", result: "Commande traitée une seule fois.", proof: "command_id inchangé", tone: "green" },
-    ],
-  },
-  {
-    id: "models",
-    title: "Pilotage des modèles IA",
-    domain: "MLOps / LLMOps",
-    audience: "Équipe IA / Data / Responsable produit",
-    objective: "Présenter santé, drift, champion/challenger, calibration et portes de mise en production.",
-    route: "/neural-analytics/models",
-    icon: "deployed_code",
-    steps: [
-      { title: "Surveillance", actor: "Model Ops", action: "Suit qualité, latence, drift et taux d’abstention.", result: "7 modèles sains sur 8 ; 1 sous surveillance.", proof: "Registre de production", tone: "green" },
-      { title: "Drift", actor: "Monitoring", action: "Détecte un changement dans la distribution des groupes.", result: "Assignment Recommender : drift moyen.", proof: "Drift watch", tone: "amber" },
-      { title: "Champion / Challenger", actor: "MLOps", action: "Compare v3.8.2 et v4.0-rc2 sur le même jeu d’évaluation.", result: "Challenger : 92,1 % vs 88,7 %, mais latence plus élevée.", proof: "Tableau comparatif", tone: "blue" },
-      { title: "Release gate", actor: "Owner modèle", action: "Vérifie calibration, erreurs, shadow mode et rollback.", result: "Promotion refusée tant que la revue d’erreurs n’est pas terminée.", proof: "Gate bloquée", tone: "amber" },
-    ],
-  },
-  {
-    id: "nlops",
-    title: "Commande en langage naturel",
-    domain: "AI Operations",
-    audience: "Manager / Expert",
-    objective: "Montrer comment une demande en français devient un plan gouverné, jamais un appel HTTP libre produit par le LLM.",
-    route: "/service-ops/actions",
-    icon: "chat",
-    steps: [
-      { title: "Demande utilisateur", actor: "Manager", action: "Demande : « trouve les tickets VPN ouverts depuis lundi et vérifie les changements réseau récents ».", result: "Intention comprise : recherche + corrélation, lecture seule.", proof: "Intent plan", tone: "blue" },
-      { title: "Planification", actor: "Orchestrateur", action: "Construit un plan de lecture structuré.", result: "1) tickets VPN 2) changements 3) similitudes 4) synthèse.", proof: "Plan visible avant exécution", tone: "green" },
-      { title: "Résultat", actor: "D-Clic", action: "Exécute le scénario sur données fictives.", result: "47 tickets liés, changement CHG-1234 corrélé à 88 %.", proof: "Résultat sourcé", tone: "amber" },
-      { title: "Action suivante", actor: "Manager", action: "Demande de préparer l’association au Problem probable.", result: "Preview générée ; validation humaine requise avant toute écriture.", proof: "Policy L2", tone: "green" },
-    ],
-  },
-  {
-    id: "self-service",
-    title: "Self-service utilisateur final",
-    domain: "Expérience utilisateur",
-    audience: "Utilisateur final / Service Desk",
-    objective: "Montrer comment l’IA améliore la qualité d’un ticket avant qu’il arrive à l’agent.",
-    route: "/service-ops/knowledge",
-    icon: "support_agent",
-    steps: [
-      { title: "Demande", actor: "Utilisateur", action: "« Je n’arrive plus à me connecter au VPN. »", result: "Intention : incident d’accès VPN.", proof: "Intent classification", tone: "blue" },
-      { title: "Diagnostic guidé", actor: "Assistant", action: "Pose deux questions utiles et propose une procédure validée.", result: "Le certificat semble expiré ; procédure KB proposée.", proof: "Réponse sourcée", tone: "green" },
-      { title: "Échec du self-service", actor: "Utilisateur", action: "Confirme que le problème persiste.", result: "Escalade vers création de ticket préparée.", proof: "Escalation reason", tone: "amber" },
-      { title: "Ticket enrichi", actor: "D-Clic", action: "Prépare sujet, description, diagnostic, catégorie et contexte.", result: "L’agent reçoit un ticket déjà qualifié.", proof: "Preview ticket", tone: "green" },
-    ],
-  },
-  {
-    id: "change",
-    title: "Risque de changement et surveillance post-changement",
-    domain: "Change Management",
-    audience: "Change Manager / CAB",
-    objective: "Évaluer le risque avant changement, estimer le rayon d’impact puis détecter les effets indésirables après exécution.",
-    route: "/neural-analytics",
-    icon: "published_with_changes",
-    steps: [
-      { title: "Analyse pré-changement", actor: "Change Intelligence", action: "Analyse type, CI, historique, dépendances et plan de retour arrière.", result: "Risque élevé ; rollback completeness 60 %.", proof: "Risk card", tone: "red" },
-      { title: "Rayon d’impact", actor: "Graph Engine", action: "Parcourt les dépendances service → sites → utilisateurs.", result: "3 services critiques et 2 400 utilisateurs potentiellement exposés.", proof: "Blast radius simulé", tone: "amber" },
-      { title: "Recommandation CAB", actor: "D-Clic", action: "Propose d’enrichir le rollback et de déplacer la fenêtre.", result: "Décision préparée pour le CAB.", proof: "What-if comparison", tone: "blue" },
-      { title: "Post Change Watch", actor: "Radar", action: "Surveille les tickets et anomalies liés après changement.", result: "Pic VPN détecté 18 minutes après CHG-1234.", proof: "Corrélation temporelle", tone: "amber" },
-    ],
-  },
-  {
-    id: "audit",
-    title: "Audit et gouvernance de bout en bout",
-    domain: "Sécurité / Conformité",
-    audience: "Admin / Sécurité / DPO / Audit",
-    objective: "Reconstituer qui a proposé, autorisé, exécuté et vérifié une action IA.",
-    route: "/system-config/audit",
-    icon: "fact_check",
-    steps: [
-      { title: "État observé", actor: "D-Clic", action: "Capture le snapshot ticket et les signaux utilisés.", result: "Evidence ID ev-demo-001 créée.", proof: "État initial immuable", tone: "blue" },
-      { title: "Décision IA", actor: "Modèle", action: "Enregistre modèle, version, score et recommandation.", result: "rec-demo-014, confiance 94 %.", proof: "Model metadata", tone: "green" },
-      { title: "Décision de politique", actor: "Policy Engine", action: "Sépare permission et confiance modèle.", result: "P-HITL-MED exige approbation humaine.", proof: "policy.evaluated", tone: "amber" },
-      { title: "Décision humaine", actor: "Manager", action: "Approuve après examen de la preview.", result: "approval.granted avec acteur et horodatage fictifs.", proof: "Approver trace", tone: "green" },
-      { title: "Exécution & vérification", actor: "Gateway DEMO", action: "Simule exécution puis read-after-write.", result: "Trace complète avec correlation_id corr-demo-8a41.", proof: "command.verified", tone: "green" },
-    ],
-  },
-  {
-    id: "resilience",
-    title: "Résilience : timeout, 5xx et double-clic",
-    domain: "Fiabilité plateforme",
-    audience: "Tech Lead / Ops / QA",
-    objective: "Démontrer que la plateforme ne perd pas l’état et ne duplique pas une action en cas d’erreur technique.",
-    route: "/system-config",
-    icon: "shield",
-    steps: [
-      { title: "Double-clic", actor: "Utilisateur", action: "Clique deux fois sur la même action.", result: "Même command_id détecté ; une seule exécution logique.", proof: "Idempotency store", tone: "green" },
-      { title: "Timeout simulé", actor: "Freshservice simulé", action: "La réponse dépasse le délai configuré.", result: "Retry contrôlé uniquement si l’opération le permet.", proof: "retry policy", tone: "amber" },
-      { title: "Erreur 503", actor: "Freshservice simulé", action: "Retourne une indisponibilité temporaire.", result: "Backoff appliqué, commande conservée et traçable.", proof: "status RETRYING", tone: "amber" },
-      { title: "Réconciliation", actor: "Gateway", action: "Vérifie l’état final après reprise.", result: "SUCCEEDED/VERIFIED ou FAILED explicite ; aucun état inconnu silencieux.", proof: "Audit final", tone: "green" },
-    ],
-  },
+f("ticket","Traitement intelligent d’un ticket","Service Desk","Agent support","Analyser, prévisualiser puis appliquer une modification simulée.","/service-ops","confirmation_number",[
+s("Ticket brut","muted","INC-9942 — Latence du portail d’authentification",[["Priorité","P3"],["Groupe","L1 Service Desk"],["Risque SLA","—"],["Classification","—"]],[["Description","Connexion très lente depuis ce matin"],["SLA restant","01:14:23"]],"Analyser le ticket","psychology","Analyse IA terminée"),
+s("Analysé","blue","Résumé + classification + risque calculés",[["Risque SLA","91 %","red"],["IAM","98,4 %","blue"],["Similaires","3","green"],["Confiance","96 %","green"]],[["Groupe proposé","Workplace Security","vs L1"],["Priorité proposée","P1 — Haute","vs P3"],["Prochaine action","Vérifier CHG-1234"]],"Prévisualiser les modifications","difference","Diff avant/après généré"),
+s("Prévisualisation","amber","Aucune modification encore appliquée",[["Groupe","L1 → Workplace","amber"],["Priorité","P3 → P1","red"],["Policy","L2","amber"],["Écriture","Bloquée","green"]],[["Avant","L1 Service Desk / P3"],["Après","Workplace Security / P1"],["Note","Corrélation IAM + risque SLA 91 %"]],"Valider et appliquer en démo","check_circle","Commande simulée vérifiée"),
+s("Vérifié","green","Le ticket simulé a réellement changé d’état",[["Priorité","P1","red"],["Groupe","Workplace Security","green"],["Risque SLA","42 %","green"],["Écriture réelle","0","green"]],[["Commande","VERIFIED"],["Validation","Agent JD"],["Résultat","État local mis à jour"]])]),
+
+f("reponse","Réponse assistée à l’utilisateur","Service Desk","Agent support","Rechercher des sources, générer un brouillon puis valider un envoi fictif.","/service-ops","forum",[
+s("Demande reçue","muted","« Je n’arrive plus à me connecter au VPN »",[["Sources","0"],["Brouillon","Non"],["Validation","Non"],["Envoi réel","0"]],[["Contexte","Certificat renouvelé hier"],["Appareil","Windows 11"]],"Rechercher dans la connaissance","travel_explore","Recherche RAG terminée"),
+s("Sources trouvées","blue","2 articles autorisés retenus",[["KB-9812","94 %","green"],["KB-4401","88 %","green"],["Grounding","96 %","blue"],["Sources refusées","1","amber"]],[["KB-9812","Renouveler le certificat VPN"],["KB-4401","Réinitialiser le cache d’identité"],["Note privée","Écartée","Confiance insuffisante"]],"Générer le brouillon","edit_note","Brouillon généré"),
+s("Brouillon prêt","amber","Réponse proposée — validation agent requise",[["Sources citées","2","green"],["Action auto","0","green"],["Policy","Validation agent","amber"],["Longueur","54 mots"]],[["Réponse","Fermer le client VPN, supprimer le certificat expiré puis relancer."],["Source","KB-9812 + KB-4401"]],"Valider l’envoi simulé","send","Réponse simulée validée"),
+s("Envoyé en démo","green","Réponse ajoutée à la conversation simulée",[["Validation","Agent JD","green"],["Statut","SENT_SIMULATED","green"],["Temps gagné","2m40","blue"],["Envoi réel","0","green"]],[["Conversation","demo-vpn-221"],["Outcome","Réponse acceptée"]])]),
+
+f("sla","Prévention d’un dépassement SLA","SLA Management","Manager / Team leader","Calculer le risque, simuler une réassignation et mesurer son effet.","/neural-analytics","timer",[
+s("À évaluer","muted","INC-9942 approche de son échéance",[["Temps restant","01:14:23","amber"],["Risque","—"],["Backlog","37"],["Réassignations","2"]],[["Groupe","L1 Service Desk"],["Catégorie","IAM / Authentification"]],"Calculer le risque SLA","query_stats","Risque SLA calculé"),
+s("Risque critique","red","91 % de probabilité de dépassement",[["Risque","91 %","red"],["Calibration","0,94","green"],["Lead time","74 min","amber"],["Confiance","93 %","blue"]],[["Facteur 1","Backlog L1 élevé","+31 pts"],["Facteur 2","2 réassignations","+18 pts"],["Facteur 3","Catégorie lente","+12 pts"]],"Simuler une réassignation","move_up","Réassignation simulée"),
+s("Scénario favorable","blue","Risque projeté : 42 % après réassignation",[["Avant","91 %","red"],["Après","42 %","green"],["Gain","−49 pts","green"],["Charge cible","63 %","blue"]],[["Source","L1 — 92 %"],["Cible","Workplace — 63 %"],["Policy","L2 — approbation manager"]],"Approuver le scénario démo","approval","Scénario SLA approuvé"),
+s("Protégé","green","Le bac à sable applique le scénario",[["Risque courant","42 %","green"],["SLA sauvé","Oui","green"],["Validation","Manager JD"],["Écriture réelle","0","green"]],[["Outcome","BREACH_PREVENTED_SIMULATED"],["Audit","Complet"]])]),
+
+f("incident","Détection d’un incident émergent","Incident & Problem Management","Incident Manager / N2-N3","Faire apparaître un cluster, le qualifier puis créer un Problem fictif.","/incident-radar","radar",[
+s("Surveillance","muted","Trafic VPN proche de la baseline",[["Baseline","2,4/h"],["Volume","3/h"],["Anomalie","0,12"],["Tickets liés","4"]],[["Service","VPN Europe"],["Sites","Paris, Rouen, Francfort"]],"Injecter le pic simulé","crisis_alert","Pic anormal injecté"),
+s("Anomalie détectée","amber","47 tickets VPN regroupés en 18 minutes",[["Volume","47","red"],["Anomaly score","0,97","red"],["Sites","5","amber"],["Utilisateurs","620","amber"]],[["Cluster","VPN Europe / Authentification"],["Phrase commune","connexion impossible après mot de passe"],["Actif","vpn-gw-eu-02"]],"Qualifier l’incident majeur","priority_high","Incident majeur qualifié"),
+s("Candidat majeur","red","Score incident majeur : 0,89",[["Score","0,89","red"],["Criticité","Élevée","red"],["Vitesse","2,6/min","amber"],["Confiance","89 %","blue"]],[["Action","Créer Problem"],["Tickets","47"],["Policy","Validation humaine"]],"Promouvoir en Problem — démo","account_tree","Problem fictif créé"),
+s("Problem créé","green","PRB-DEMO-104 créé dans le bac à sable",[["Problem","PRB-DEMO-104","green"],["Tickets liés","47"],["Watch mode","Actif","green"],["Écriture réelle","0","green"]],[["Owner","Incident Manager"],["Statut","Investigation"]])]),
+
+f("root-cause","Classement des causes probables","Problem Management","Incident Manager / Expert","Croiser les preuves sans transformer corrélation en certitude.","/incident-radar","account_tree",[
+s("Non corrélé","muted","Le cluster VPN n’a pas encore de piste",[["Causes","0"],["Changements","0"],["Actifs communs","1"],["Preuves","0"]],[["Cluster","clu-demo-vpn-47"]],"Corréler changements et actifs","hub","Causes candidates classées"),
+s("3 pistes","amber","CHG-1234 est la piste la plus plausible — pas une vérité",[["CHG-1234","88 %","red"],["INC-8992","42 %","amber"],["SYS-EVT","15 %"],["Preuves","12","blue"]],[["CHG-1234","Règles firewall VPN Europe","08:02"],["INC-8992","Latence ISP Francfort","08:11"],["SYS-EVT","Expiration batch tokens","07:55"]],"Ouvrir les preuves CHG-1234","fact_check","Bundle de preuves consulté"),
+s("Piste retenue","blue","CHG-1234 retenu pour investigation humaine",[["Concordance","9/12","green"],["Conflits","1","amber"],["Expert requis","Oui"],["Certitude","Non","green"]],[["Preuve","Même gateway VPN"],["Preuve","Déploiement 8 min avant le pic"],["Contre-signal","2 tickets hors Europe"]],"Activer la surveillance ciblée","visibility","Watch mode activé"),
+s("Surveillance active","green","Watch mode actif sur CHG-1234",[["Watch","Actif","green"],["Fenêtre","60 min"],["Signaux","Tickets + erreurs"],["Écriture réelle","0","green"]],[["Piste","CHG-1234"],["Owner","Incident Manager"]])]),
+
+f("workload","Rééquilibrage de la charge","Service Operations","Manager Service Desk","Simuler un transfert et constater l’effet réel dans les KPI du bac à sable.","/service-ops/workload","groups",[
+s("Charge courante","amber","Deux équipes proches de la saturation",[["L1","92 %","amber"],["SecOps","98 %","red"],["Workplace","54 %","green"],["Réseau","45 %","green"]],[["Pic prévu","16:20 — 91 % global"],["Tickets transférables","14"]],"Simuler le rééquilibrage","move_up","Rééquilibrage calculé"),
+s("Simulation","blue","14 tickets simples peuvent quitter L1",[["L1 après","74 %","green"],["Workplace après","68 %","blue"],["SLA projeté","+14 %","green"],["Conflits","0","green"]],[["Déplacement","10 resets → Workplace"],["Déplacement","4 M365 → Workplace"],["Batch","21 tâches différées"]],"Appliquer au bac à sable","check_circle","Charge simulée mise à jour"),
+s("Rééquilibré","green","La charge simulée est redistribuée",[["L1","74 %","green"],["SecOps","82 %","amber"],["Workplace","68 %","blue"],["SLA sauvés","4","green"]],[["Tickets déplacés","14"],["Tâches différées","21"],["Écriture réelle","0"]])]),
+
+f("knowledge","Connaissance, RAG et lacunes documentaires","Knowledge Management","Knowledge Manager / Agent","Rechercher, détecter un manque puis générer un article fictif.","/service-ops/knowledge","library_books",[
+s("Question prête","muted","Comment renouveler un certificat VPN après remplacement du poste ?",[["Sources","0"],["Grounding","—"],["Lacunes","—"],["Brouillon","Non"]],[["Corpus","KB + SOP + résolutions validées"]],"Interroger le RAG","travel_explore","Recherche RAG terminée"),
+s("Réponse sourcée","blue","2 sources fiables couvrent partiellement la question",[["KB-9812","94 %","green"],["SOP-441","86 %","green"],["Grounding","94,1 %","blue"],["Couverture","71 %","amber"]],[["Source","KB-9812 — Certificat VPN"],["Source","SOP-441 — Remplacement poste"]],"Détecter les lacunes","find_in_page","Lacune détectée"),
+s("Lacune prioritaire","amber","34 résolutions similaires sans article complet",[["Résolutions","34","amber"],["Impact","Élevé","red"],["Article","Absent"],["Confiance","96 %","blue"]],[["Sujet","VPN après remplacement poste"],["Owner","Knowledge Manager"]],"Générer un article brouillon","description","Brouillon généré"),
+s("Brouillon prêt","green","KB-DEMO-220 prêt pour revue",[["Sections","6/6","green"],["Sources","2"],["Publication","Bloquée","amber"],["Écriture réelle","0","green"]],[["Titre","Renouveler le certificat VPN après remplacement du poste"],["Statut","À valider par Knowledge Manager"]])]),
+
+f("actions","Actions IA et validation humaine","Gouvernance IA","Manager / Administrateur","Montrer que confiance et permission sont séparées.","/service-ops/actions","approval",[
+s("Recommandation","blue","Réassigner 14 tickets SLA vers Workplace",[["Confiance","94 %","blue"],["Risque métier","Moyen","amber"],["Autonomie","À calculer"],["Écriture","Bloquée","green"]],[["Source","Moteur de charge"],["Impact","14 tickets / +14 % SLA"]],"Évaluer la politique","policy","Policy Engine évalué"),
+s("Approbation requise","amber","Policy P-HITL-MED → niveau L2",[["Autonomie","L2","amber"],["Approbateur","Manager"],["Droits","OK","green"],["Exécution","Interdite"]],[["Avant","L1 — 14 tickets"],["Après","Workplace — 14 tickets"],["Policy","P-HITL-MED"]],"Approuver la commande démo","person_check","Approbation accordée"),
+s("Commande autorisée","blue","cmd-demo-014 prête pour le Gateway",[["Commande","cmd-demo-014"],["Approval","GRANTED","green"],["Idempotence","Active","green"],["Écriture réelle","0","green"]],[["Actor","manager.demo"],["Correlation","corr-demo-014"]],"Exécuter via Gateway démo","bolt","Commande simulée vérifiée"),
+s("Vérifié","green","Action simulée exécutée une seule fois",[["Statut","VERIFIED","green"],["Tentatives","1"],["Doublons","0","green"],["Écriture externe","0","green"]],[["Résultat","14 tickets réassignés localement"],["Audit","Complet"]])]),
+
+f("quota","Gestion des quotas API et erreur 429","Freshservice Gateway","Admin / Ops","Déclencher un 429 fictif et voir les protections se mettre en place.","/system-config","speed",[
+s("Normal","green","Quota partagé sous contrôle",[["Consommation","231/min","green"],["Limite","400/min"],["Réserve","20 %","green"],["429","0"]],[["Ticket Sync","145/min"],["Intelligence","68/min"],["Autres","18/min"]],"Simuler un pic","trending_up","Pic simulé"),
+s("Seuil critique","amber","385/min — réserve presque atteinte",[["Consommation","385/min","amber"],["Disponible","15/min","red"],["Batch","Ralenti","amber"],["P0/P1","Protégés","green"]],[["Ticket Sync","210/min"],["Batch","95/min"],["Interactive","80/min"]],"Déclencher un 429 simulé","error","429 géré"),
+s("429 géré","red","Retry-After: 42 secondes",[["HTTP","429","red"],["Retry-After","42s","amber"],["Batch","Suspendu","red"],["Perte","0","green"]],[["Queue P0/P1","2"],["Queue P3","128"],["Circuit","HALF_OPEN"]],"Reprendre après la fenêtre","play_arrow","Trafic repris"),
+s("Rétabli","green","Consommation stabilisée à 238/min",[["Consommation","238/min","green"],["429","0","green"],["Batch","Reprise","blue"],["Perte","0","green"]],[["P3 en attente","34"],["Réserve","Disponible"]])]),
+
+f("models","Pilotage des modèles IA","MLOps / LLMOps","AI Engineer / Model Owner","Comparer champion/challenger et promouvoir uniquement après les gates.","/neural-analytics/models","model_training",[
+s("Registry","blue","v3.8.2 est champion",[["Champion","v3.8.2"],["Qualité","88,7 %","blue"],["Challenger","v4.0-rc2"],["Offline","92,1 %","green"]],[["Calibration champion","0,071"],["Calibration challenger","0,043"]],"Lancer le shadow test","compare_arrows","Shadow test démarré"),
+s("Shadow actif","amber","Le challenger observe 2 000 tickets sans agir",[["Échantillon","2 000"],["Champion","88,9 %"],["Challenger","92,0 %","green"],["P95","168ms","amber"]],[["Erreurs critiques","−31 %"],["Drift","Faible"],["Gate sécurité","PASS"]],"Valider les release gates","fact_check","Gates validés"),
+s("Prêt","blue","Tous les gates sont verts",[["Offline","PASS","green"],["Calibration","PASS","green"],["Shadow","PASS","green"],["Rollback","READY","green"]],[["Décision","Promotion autorisée en démo"],["Ancien champion","Conservé pour rollback"]],"Promouvoir le challenger — démo","rocket_launch","Challenger promu"),
+s("Champion changé","green","v4.0-rc2 devient champion dans le bac à sable",[["Champion","v4.0-rc2","green"],["Qualité","92,0 %","green"],["Rollback","v3.8.2"],["Prod réelle","Inchangée","green"]],[["Statut","PROMOTED_SIMULATED"]])]),
+
+f("nl","Commande en langage naturel","Decision Intelligence","Manager / Agent","Transformer une demande libre en plan gouverné, jamais en HTTP libre.","/","terminal",[
+s("Commande saisie","muted","« Trouve les incidents critiques après le changement réseau de ce matin »",[["Intent","—"],["Plan","—"],["Résultats","—"],["Écriture","0","green"]],[["Utilisateur","Manager Service Desk"]],"Interpréter la commande","schema","Plan généré"),
+s("Plan prêt","blue","Plan de lecture en 4 opérations",[["Intent","Investigation"],["Outils lecture","4"],["Écriture","0","green"],["Policy","READ_ONLY","green"]],[["1","Lire CHG réseau depuis 06:00"],["2","Lister incidents critiques"],["3","Corréler timestamps/assets"],["4","Classer les matches"]],"Exécuter le plan de lecture","play_arrow","Lecture exécutée"),
+s("Résultats","green","7 incidents critiques corrélés à CHG-1234",[["Incidents","7","red"],["Match fort","5","amber"],["Match faible","2"],["Écriture","0","green"]],[["INC-9942","91 %"],["INC-9938","88 %"],["INC-9927","84 %"]],"Préparer le rattachement au Problem","difference","Action structurée préparée"),
+s("Preview","amber","Association au PRB-DEMO-104 préparée",[["Tickets","7"],["Policy","L2","amber"],["Validation","Requise","amber"],["Exécution","Non"]],[["Action","problem.link_incidents"],["Target","PRB-DEMO-104"]])]),
+
+f("selfservice","Self-service utilisateur final","Employee Experience","Utilisateur final","Tenter un diagnostic puis créer un ticket enrichi si nécessaire.","/service-ops","support_agent",[
+s("Conversation","muted","« Je n’arrive plus à me connecter au VPN »",[["Intent","—"],["Questions","0"],["Self-service","Non tenté"],["Ticket","Non créé"]],[["Canal","Assistant employé"]],"Analyser la demande","psychology","Intention détectée"),
+s("Diagnostic","blue","Intention : accès VPN / authentification",[["Confiance","96 %","green"],["Questions","2"],["KB","KB-9812"],["Escalade","Pas encore"]],[["Question 1","Mot de passe changé ?"],["Question 2","Poste remplacé ?"]],"Simuler l’échec du self-service","report_problem","Self-service en échec"),
+s("Escalade","amber","La procédure n’a pas résolu le problème",[["Étapes testées","3"],["Résolution","Échec"],["Catégorie","VPN / Accès"],["Contexte","Conservé","green"]],[["Diagnostic","Certificat renouvelé / cache vidé / échec"],["Groupe proposé","Workplace Security"]],"Créer le ticket simulé","add_task","Ticket enrichi créé"),
+s("Ticket créé","green","INC-DEMO-1201 créé avec contexte complet",[["Qualité","Élevée","green"],["Champs","8/8","green"],["Diagnostic","Joint"],["Écriture réelle","0","green"]],[["Sujet","VPN inaccessible après renouvellement certificat"],["Groupe","Workplace Security"]])]),
+
+f("change","Risque de changement et surveillance post-changement","Change Management","Change Manager","Évaluer, réduire le risque puis lancer une surveillance fictive.","/neural-analytics","published_with_changes",[
+s("À évaluer","muted","CHG-1234 — Mise à jour firewall VPN Europe",[["Risque","—"],["Services critiques","3","amber"],["Rollback","60 %","red"],["Similaires","17"]],[["Fenêtre","08:00–08:30"],["CI","vpn-gw-eu-01/02"]],"Évaluer le risque","query_stats","Risque évalué"),
+s("Risque élevé","red","Risque 82/100 · blast radius important",[["Risque","82/100","red"],["Incidents historiques","5","amber"],["Blast radius","620 users","red"],["Rollback","60 %","red"]],[["Recommandation","Compléter rollback"],["Recommandation","Décaler à 06:30"],["Recommandation","Activer Watch"]],"Simuler les mesures de réduction","build_circle","Mitigations simulées"),
+s("Risque réduit","blue","Risque projeté : 49/100",[["Risque","49/100","amber"],["Rollback","95 %","green"],["Fenêtre","06:30"],["Watch","Prêt","green"]],[["Gate","Manager approval"],["Rollback testé","Oui"]],"Lancer Post Change Watch","visibility","Watch démarré"),
+s("Surveillance active","green","Post Change Watch surveille le scénario",[["Fenêtre","60 min"],["Tickets anormaux","0","green"],["Erreurs","Stable","green"],["Écriture réelle","0","green"]],[["Statut","SUCCESS_SIMULATED"],["Watch","Actif"]])]),
+
+f("audit","Audit et gouvernance de bout en bout","Governance","Sécurité / DPO / Manager","Reconstituer la décision complète depuis le signal jusqu’à la vérification.","/system-config/audit","history",[
+s("Recherche","muted","Corrélation à inspecter : corr-demo-014",[["Événements","—"],["Complétude","—"],["Policy","—"],["Preuve","—"]],[["Correlation ID","corr-demo-014"]],"Reconstruire la trace","manage_search","Trace reconstruite"),
+s("Trace complète","blue","5 événements reliés au même correlation_id",[["Événements","5"],["Complétude","99,9 %","green"],["Actor","manager.demo"],["Model","workload-demo-v1"]],[["14:23:04","recommendation.created"],["14:23:07","policy.evaluated"],["14:24:16","approval.granted"],["14:24:17","command.executed"],["14:24:18","command.verified"]],"Vérifier l’intégrité","verified_user","Intégrité vérifiée"),
+s("Intègre","green","La décision est reconstructible de bout en bout",[["Chaîne","VALID","green"],["Manquants","0","green"],["Payload hash","MATCH","green"],["PII","Masquées","green"]],[["Règle","Confiance IA ≠ permission"],["Outcome","VERIFIED_SIMULATED"]],"Exporter le dossier de preuve","download","Dossier préparé"),
+s("Dossier prêt","green","Pack d’audit DEMO-014 préparé",[["Événements","5"],["Policies","1"],["Snapshots","2"],["Export réel","Non"]],[["Contenu","Timeline + décision + preuve"]])]),
+
+f("resilience","Résilience : timeout, 5xx et double-clic","Platform Reliability","Tech Lead / Ops","Prouver l’idempotence et la gestion contrôlée des erreurs.","/system-config","shield",[
+s("Stable","green","cmd-demo-res-01 prête",[["Tentatives","0"],["Doublons","0"],["Circuit","CLOSED","green"],["Résultat","—"]],[["Command ID","cmd-demo-res-01"],["Payload hash","a8f1-demo"]],"Simuler un timeout","hourglass_empty","Timeout simulé"),
+s("Retry contrôlé","amber","Timeout : état inconnu, aucune duplication",[["Tentatives","1"],["État","UNKNOWN","amber"],["Retry","Contrôlé"],["Doublons","0","green"]],[["Commande","Conservée"],["Réconciliation","REQUIRED"]],"Simuler des 5xx répétés","warning","Circuit ouvert"),
+s("Circuit ouvert","red","Le circuit breaker protège Freshservice",[["5xx","5","red"],["Circuit","OPEN","red"],["Queue","Conservée"],["Perte","0","green"]],[["P0","En attente sécurisée"],["P3","Suspendu"]],"Simuler un double-clic après reprise","touch_app","Double-clic dédupliqué"),
+s("Dédupliqué","green","Deux clics, une seule commande logique",[["Clics","2"],["Exécutions","1","green"],["Doublons","0","green"],["Circuit","HALF_OPEN","blue"]],[["1er appel","ACCEPTED"],["2e appel","IDEMPOTENT_REPLAY"]])]),
 ];
 
-function toneClass(tone: Tone = "muted") {
-  return styles[`tone_${tone}`];
-}
+const time=()=>new Intl.DateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit",second:"2-digit"}).format(new Date());
 
-export function DemoCenter() {
-  const [selectedId, setSelectedId] = useState(workflows[0].id);
-  const [stepIndex, setStepIndex] = useState(-1);
-  const selected = useMemo(() => workflows.find((item) => item.id === selectedId) ?? workflows[0], [selectedId]);
-  const current = stepIndex >= 0 ? selected.steps[Math.min(stepIndex, selected.steps.length - 1)] : null;
-  const finished = stepIndex >= selected.steps.length - 1 && stepIndex >= 0;
-
-  function selectWorkflow(id: string) {
-    setSelectedId(id);
-    setStepIndex(-1);
-  }
-
-  function start() {
-    setStepIndex(0);
-  }
-
-  function next() {
-    setStepIndex((value) => Math.min(value + 1, selected.steps.length - 1));
-  }
-
-  function reset() {
-    setStepIndex(-1);
-  }
-
-  return (
-    <div className={styles.wrap}>
-      <section className={styles.safetyBanner}>
-        <div>
-          <span className="material-symbols-outlined">science</span>
-          <div><strong>Environnement de démonstration</strong><p>Toutes les données, prédictions, décisions et exécutions ci-dessous sont simulées pour expliquer la solution.</p></div>
-        </div>
-        <div className={styles.safetyStats}><span><b>16</b> workflows</span><span><b>0</b> écriture Freshservice</span><span><b>100 %</b> réinitialisable</span></div>
-      </section>
-
-      <section className={styles.intro}>
-        <div><span className={styles.eyebrow}>PARCOURS MÉTIER DE BOUT EN BOUT</span><h2>Présenter D-Clic par des démonstrations concrètes</h2><p>Choisis un scénario à gauche, lance-le puis avance étape par étape. Chaque workflow montre qui agit, ce que fait D-Clic, le résultat simulé et la preuve que l’on afficherait en production.</p></div>
-        <div className={styles.legend}><span className={styles.legendDotGreen}/> validé / sûr <span className={styles.legendDotAmber}/> décision / vigilance <span className={styles.legendDotRed}/> risque</div>
-      </section>
-
-      <div className={styles.layout}>
-        <aside className={styles.catalog}>
-          <div className={styles.catalogHead}><strong>Scénarios</strong><span>{workflows.length}</span></div>
-          {workflows.map((flow, index) => (
-            <button key={flow.id} className={`${styles.workflowButton} ${flow.id === selected.id ? styles.active : ""}`} onClick={() => selectWorkflow(flow.id)}>
-              <span className="material-symbols-outlined">{flow.icon}</span>
-              <span><small>{String(index + 1).padStart(2, "0")} · {flow.domain}</small><strong>{flow.title}</strong></span>
-            </button>
-          ))}
-        </aside>
-
-        <main className={styles.stage}>
-          <div className={styles.stageHead}>
-            <div><span className={styles.domain}>{selected.domain}</span><h3>{selected.title}</h3><p>{selected.objective}</p><div className={styles.audience}><span className="material-symbols-outlined">groups</span>{selected.audience}</div></div>
-            <Link href={selected.route} className={styles.openScreen}><span className="material-symbols-outlined">open_in_new</span> Ouvrir l’écran métier</Link>
-          </div>
-
-          <div className={styles.progressRow}>
-            {selected.steps.map((step, index) => {
-              const done = stepIndex > index;
-              const active = stepIndex === index;
-              return <div key={step.title} className={`${styles.progressStep} ${done ? styles.done : ""} ${active ? styles.current : ""}`}><span>{done ? "✓" : index + 1}</span><small>{step.title}</small></div>;
-            })}
-          </div>
-
-          {current ? (
-            <section className={styles.currentCard}>
-              <div className={styles.currentTop}><span className={`${styles.stepBadge} ${toneClass(current.tone)}`}>ÉTAPE {stepIndex + 1}/{selected.steps.length}</span><span className={styles.actor}>{current.actor}</span></div>
-              <h4>{current.title}</h4>
-              <div className={styles.infoGrid}>
-                <div><small>ACTION / ENTRÉE</small><p>{current.action}</p></div>
-                <div><small>RÉSULTAT SIMULÉ</small><p>{current.result}</p></div>
-                <div><small>PREUVE / TRAÇABILITÉ</small><p>{current.proof}</p></div>
-              </div>
-              <div className={styles.fakeLog}><span>DEMO</span><code>{`correlation_id=demo-${selected.id}-${String(stepIndex + 1).padStart(2, "0")} · external_write=false · status=${finished ? "VERIFIED" : "SIMULATED"}`}</code></div>
-            </section>
-          ) : (
-            <section className={styles.readyCard}><span className="material-symbols-outlined">play_circle</span><h4>Scénario prêt</h4><p>Commence la démonstration. Aucun appel réseau vers Freshservice n’est effectué par ce workflow.</p></section>
-          )}
-
-          <div className={styles.controls}>
-            <button className={styles.secondary} onClick={reset} disabled={stepIndex < 0}><span className="material-symbols-outlined">restart_alt</span> Réinitialiser</button>
-            {stepIndex < 0 ? <button className={styles.primary} onClick={start}><span className="material-symbols-outlined">play_arrow</span> Démarrer ce workflow</button> : !finished ? <button className={styles.primary} onClick={next}>Étape suivante <span className="material-symbols-outlined">arrow_forward</span></button> : <button className={styles.primary} onClick={reset}><span className="material-symbols-outlined">check_circle</span> Démo terminée — Rejouer</button>}
-          </div>
-
-          <section className={styles.storyboard}>
-            <div className={styles.storyHead}><strong>Storyboard complet</strong><span>À utiliser comme aide-mémoire pendant la présentation</span></div>
-            {selected.steps.map((step, index) => <div className={styles.storyRow} key={step.title}><span className={`${styles.storyIndex} ${toneClass(step.tone)}`}>{index + 1}</span><div><strong>{step.title}</strong><p><b>{step.actor}</b> — {step.action}</p></div><span className={styles.storyResult}>{step.result}</span></div>)}
-          </section>
-        </main>
-      </div>
+export function DemoCenter(){
+ const [selected,setSelected]=useState("ticket"); const [phase,setPhase]=useState(0); const [busy,setBusy]=useState(false); const [logs,setLogs]=useState<Log[]>([]);
+ const flow=useMemo(()=>flows.find(x=>x.id===selected)??flows[0],[selected]); const snap=flow.snaps[Math.min(phase,flow.snaps.length-1)]; const progress=Math.round((phase/Math.max(1,flow.snaps.length-1))*100);
+ const choose=(id:string)=>{setSelected(id);setPhase(0);setLogs([]);setBusy(false)}; const reset=()=>{setPhase(0);setLogs([]);setBusy(false)};
+ const run=()=>{if(!snap.action||busy||phase>=flow.snaps.length-1)return;setBusy(true);const action=snap.action;const next=flow.snaps[phase+1];window.setTimeout(()=>{setPhase(v=>v+1);setLogs(v=>[{id:`${flow.id}-${phase+1}`,action,message:next.audit??next.status,at:time()},...v]);setBusy(false)},650)};
+ return <div className={styles.wrap}>
+  <div className={styles.safetyBanner}><div><span className="material-symbols-outlined">science</span><div><strong>BAC À SABLE FONCTIONNEL</strong><p>Les boutons modifient l’état de cette démonstration. Aucun appel ni aucune écriture n’est envoyé vers Freshservice.</p></div></div><div className={styles.safetyStats}><span><b>16</b> scénarios</span><span><b>0</b> écriture externe</span><span><b>100%</b> rejouable</span></div></div>
+  <div className={styles.layout}>
+   <aside className={styles.catalog}><div className={styles.catalogHead}><strong>Démonstrations</strong><span>{flows.length}</span></div>{flows.map(x=><button key={x.id} type="button" onClick={()=>choose(x.id)} className={`${styles.workflowButton} ${x.id===flow.id?styles.active:""}`}><span className="material-symbols-outlined">{x.icon}</span><span><small>{x.domain}</small><strong>{x.title}</strong></span></button>)}</aside>
+   <section className={styles.workspace}>
+    <div className={styles.workspaceHead}><div><div className={styles.domain}>{flow.domain}</div><h2>{flow.title}</h2><p>{flow.objective}</p><div className={styles.audience}><span className="material-symbols-outlined">person</span>{flow.audience}</div></div><Link className={styles.openScreen} href={flow.route}><span className="material-symbols-outlined">open_in_new</span>Voir l’écran métier</Link></div>
+    <div className={styles.progressTrack}><span style={{width:`${progress}%`}}/></div><div className={styles.statusLine}><span className={`${styles.statusBadge} ${styles[`tone_${snap.tone}`]}`}>{snap.status}</span><code>state={phase+1}/{flow.snaps.length} · external_write=false</code></div>
+    <div className={styles.metricGrid}>{snap.metrics.map(([label,value,tone])=><div className={styles.metricCard} key={label}><span>{label}</span><strong className={tone?styles[`text_${tone}`]:""}>{value}</strong></div>)}</div>
+    <div className={styles.liveGrid}>
+     <div className={styles.mainPanel}><div className={styles.panelLabel}><span className="material-symbols-outlined">monitoring</span>Vue métier simulée</div><h3>{snap.headline}</h3><div className={styles.dataRows}>{snap.rows.map(([label,value,meta],i)=><div className={styles.dataRow} key={`${label}-${i}`}><div><small>{label}</small><strong>{value}</strong></div>{meta?<span>{meta}</span>:null}</div>)}</div><div className={styles.controls}><button className={styles.secondary} type="button" onClick={reset} disabled={phase===0&&logs.length===0}><span className="material-symbols-outlined">restart_alt</span>Réinitialiser</button>{snap.action?<button className={styles.primary} type="button" onClick={run} disabled={busy}><span className="material-symbols-outlined">{busy?"progress_activity":snap.icon??"play_arrow"}</span>{busy?"Simulation en cours…":snap.action}</button>:<span className={styles.completed}><span className="material-symbols-outlined">verified</span>Scénario terminé</span>}</div></div>
+     <aside className={styles.sidePanel}><div className={styles.panelLabel}><span className="material-symbols-outlined">fact_check</span>Preuves & gouvernance</div><div className={styles.evidenceList}><code>external_write=false</code><code>correlation_id=demo-{flow.id}</code><code>state={phase+1}</code><code>status={snap.status.toUpperCase().replaceAll(" ","_")}</code></div><div className={styles.auditHead}><strong>Journal de démonstration</strong><span>{logs.length} événement(s)</span></div><div className={styles.auditList}>{logs.length===0?<div className={styles.emptyAudit}>Exécute une action : les événements apparaîtront ici.</div>:logs.map(e=><div className={styles.auditEntry} key={`${e.id}-${e.at}`}><span className={styles.auditDot}/><div><strong>{e.action}</strong><p>{e.message}</p><code>{e.at} · correlation_id=demo-{e.id}</code></div></div>)}</div></aside>
     </div>
-  );
+   </section>
+  </div>
+ </div>
 }
