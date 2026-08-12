@@ -60,10 +60,10 @@ export function AppShell({
         </nav>
 
         <div className="sidebar-spacer" />
-        <button className="deploy-button" type="button">
-          <span className="material-symbols-outlined">rocket_launch</span>
-          Déployer une mise à jour
-        </button>
+        <Link className="deploy-button" href="/demo">
+          <span className="material-symbols-outlined">slideshow</span>
+          Lancer la démonstration
+        </Link>
         <div className="sidebar-footer">
           <a href="#"><span className="material-symbols-outlined">help</span>Support</a>
           <a href="#"><span className="material-symbols-outlined">terminal</span>Journaux</a>
@@ -72,7 +72,12 @@ export function AppShell({
 
       <main className="main-stage">
         <header className="topbar">
-          <h1>{title}</h1>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, minWidth: 0 }}>
+            <h1>{title}</h1>
+            <span className="chip chip-amber" title="Les données affichées dans cette version sont simulées pour la présentation">
+              DÉMO · DONNÉES SIMULÉES
+            </span>
+          </div>
           <div className="topbar-actions">
             <label className="search-box">
               <span className="material-symbols-outlined">search</span>
