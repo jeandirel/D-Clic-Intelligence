@@ -13,10 +13,18 @@ from app.core.config import Settings
 from app.data.models import Base
 
 
+def _normalize_database_url(value: str) -> str:
+    if value.startswith("postgresql://"):
+        return value.replace("postgresql://", "postgresql+psycopg://", 1)
+    if value.startswith("postgres://"):
+        return value.replace("postgres://", "postgresql+psycopg://", 1)
+    return value
+
+
 class Database:
     def __init__(self, settings: Settings) -> None:
         self.engine: AsyncEngine = create_async_engine(
-            settings.database_url,
+            _normalize_database_url(settings.database_url),
             pool_pre_ping=True,
         )
         self.session_factory = async_sessionmaker(
