@@ -1,304 +1,246 @@
-# 15 — D-Clic Copilote Agent
+# 15 — D-Clic Copilote Agent — Production
 
 ## Positionnement
 
-Le **Copilote Agent** est un module de D-Clic Intelligence dédié au travail quotidien des agents et managers Service Desk. Il ne remplace ni Freshservice ni les autres modules D-Clic (Radar d’incidents, SLA, Charge, Knowledge, Model Ops, API Control, Gouvernance).
+Le **D-Clic Copilote Agent** est le poste de travail intelligent des agents et managers Service Desk. Il ne remplace pas Freshservice : Freshservice reste la source de vérité. D-Clic ajoute compréhension, recommandations, voix, visualisation, gouvernance et orchestration.
 
-Sa boucle est :
+Boucle :
 
-**Rechercher / sélectionner → comprendre → enrichir → recommander → visualiser → prévisualiser → faire valider → exécuter via Gateway → vérifier → apprendre.**
+**Rechercher → sélectionner → lire Freshservice → comprendre → recommander → prévisualiser → validation humaine → Gateway → Freshservice → relire → auditer.**
 
-## État de la version actuelle
+## Route
 
-La route `/service-ops/copilot` est une **sandbox fonctionnelle de démonstration** :
+`/service-ops/copilot`
 
-- les vues Freshservice fournies pour le projet sont enregistrées dans un registre de démonstration ;
-- un jeu de tickets simulés permet de tester les workflows ;
-- toutes les transformations sont locales au navigateur ;
-- `external_write=false` est la règle de cette version ;
-- aucune modification réelle n’est envoyée à Freshservice ;
-- la voix utilise Web Speech API lorsque le navigateur la supporte et retombe sur le texte sinon.
+Cette route utilise désormais le backend D-Clic et les données Freshservice réelles. Elle ne retombe pas silencieusement sur des tickets de démonstration.
 
-## Capacités démontrables
+## Endpoints D-Clic Copilote
 
-### Recherche et navigation conversationnelles
+- `GET /api/v1/copilot/status`
+- `GET /api/v1/copilot/tickets`
+- `GET /api/v1/copilot/tickets/filter?query=...`
+- `GET /api/v1/copilot/tickets/{id}/context`
+- `POST /api/v1/copilot/analyze`
+- `POST /api/v1/copilot/preview`
+- `POST /api/v1/copilot/execute`
+- `POST /api/v1/copilot/visualize`
+- `POST /api/v1/copilot/voice/token`
 
-Le Copilote peut :
+## Freshservice utilisé
 
-- rechercher une vue ;
-- sélectionner une vue ;
-- filtrer la liste locale de tickets ;
-- sélectionner un ticket par ID ;
-- sélectionner un ticket par demandeur (ex. Rodrigo) ;
-- comprendre des commandes simples en français.
+Le Gateway centralise les appels vers l’API v2 :
 
-Exemples :
+- tickets ;
+- filtre de tickets ;
+- ticket individuel ;
+- conversations ;
+- `ticket_form_fields` ;
+- groupes ;
+- agents ;
+- requester / stats / assets / changes / related tickets via `include` ;
+- `PUT ticket` uniquement après validation.
 
-- `Montre-moi les tickets non assignés.`
-- `Affiche les tickets VIP.`
-- `Sélectionne le ticket de Rodrigo.`
-- `Ouvre INC-157104.`
+Documentation officielle : https://api.freshservice.com/v2/
 
-### Analyse du ticket
+## Taxonomie
 
-Le bouton **Analyser avec le Copilote** produit :
+`GET /api/v2/ticket_form_fields` est synchronisé/caché afin de fournir au Copilote la taxonomie réellement configurée. Les recommandations applicables doivent rester dans les valeurs Freshservice disponibles.
 
-- résumé métier ;
-- description structurée ;
-- priorité recommandée ;
-- groupe recommandé ;
-- catégorie / sous-catégorie / élément ;
-- informations manquantes ;
-- tickets similaires ;
-- prochaine meilleure action ;
-- brouillon de réponse.
+## Analyse IA
 
-### Smart Prompting
+### Avec fournisseur IA configuré
 
-Le Copilote identifie les informations nécessaires au diagnostic et prépare des questions ciblées plutôt que de se limiter à reformuler le texte.
+Variables backend :
 
-### Context / Asset Intelligence
-
-Lorsque le ticket simulé contient un actif, le Copilote affiche :
-
-- équipement ;
-- identifiant ;
-- garantie ;
-- nombre d’incidents connus.
-
-La cible production prévoit l’entity resolution avec les Assets / CI Freshservice synchronisés dans l’ODS.
-
-### Avant / Après avec validation humaine
-
-Le Copilote ouvre une prévisualisation modifiable :
-
-- description ;
-- priorité ;
-- groupe ;
-- catégorie ;
-- sous-catégorie ;
-- élément.
-
-Chaque champ peut être :
-
-- conservé ;
-- exclu ;
-- corrigé par l’agent.
-
-Une correction humaine différente de la proposition IA est considérée comme un signal de feedback d’apprentissage.
-
-**Niveau d’autonomie : L2 — Human-in-the-loop.**
-
-Une commande vocale telle que `applique les modifications` ne contourne jamais l’écran de confirmation.
-
-## Voix
-
-### Démonstration
-
-La version Web utilise :
-
-- `SpeechRecognition` / `webkitSpeechRecognition` pour la transcription ;
-- `SpeechSynthesis` pour lire les réponses lorsque l’option est activée.
-
-La reconnaissance vocale n’est pas supportée de façon homogène par tous les navigateurs : le texte reste un fallback permanent.
-
-Documentation :
-
-- https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API
-- https://developer.mozilla.org/en-US/docs/Web/API/SpeechRecognition
-
-### Cible production
-
-Le module doit exposer une abstraction `VoiceGateway` afin de pouvoir utiliser un fournisseur entreprise (par exemple Azure Speech) sans modifier l’orchestrateur métier.
-
-## Visual Intelligence
-
-Visual Intelligence transforme une demande texte ou voix en analyse Service Desk.
-
-Exemples :
-
-- `Crée un visuel des tickets par groupe.`
-- `Montre le risque SLA par groupe.`
-- `Fais la répartition par priorité.`
-- `Montre l’évolution des tickets.`
-- `Montre les tickets par site.`
-- `Fais une heatmap des arrivées par heure.`
-
-### Fonctionnement sandbox
-
-Le moteur actuel :
-
-1. interprète la demande ;
-2. sélectionne une métrique et une dimension autorisées ;
-3. agrège le jeu local de tickets ;
-4. choisit bar / line / donut / heatmap ;
-5. ouvre un modal ;
-6. affiche données, scope, source, fraîcheur et insights ;
-7. accepte une modification conversationnelle ;
-8. permet d’épingler le visuel dans le tableau de bord local de démonstration.
-
-### Cible production
-
-Le LLM ne doit pas exécuter du SQL ou du JavaScript arbitraire.
-
-Architecture cible :
-
-```text
-Voix / texte / contexte UI
-          ↓
-Intent Orchestrator
-          ↓
-VisualizationRequest structuré
-          ↓
-Semantic Layer
-          ↓
-Query Planner autorisé
-          ↓
-ODS PostgreSQL
-          ↓
-Dataset agrégé
-          ↓
-Visualization Planner
-          ↓
-D-Clic Chart Spec
-          ↓
-Validator
-          ↓
-Renderer
-          ↓
-Modal + Insights + Audit
+```env
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5-mini
 ```
 
-Le Semantic Layer doit exposer des métriques contrôlées comme :
+Le backend envoie le contexte structuré du ticket au fournisseur IA et exige une sortie JSON structurée. Le modèle reçoit notamment :
 
-- `ticket_count` ;
-- `open_ticket_count` ;
-- `unassigned_count` ;
-- `sla_breach_count` ;
-- `sla_risk_count` ;
-- `average_resolution_time` ;
-- `average_first_response_time` ;
-- `major_incident_count` ;
-- `ai_created_count` ;
-- `negative_csat_count`.
+- ticket ;
+- conversations récentes ;
+- groupes Freshservice autorisés ;
+- définition du champ catégorie.
 
-Et des dimensions telles que :
+Le modèle ne reçoit pas le droit d’écrire dans Freshservice.
 
-- date / heure ;
-- statut ;
-- priorité ;
-- type ;
-- groupe ;
-- agent ;
-- catégorie ;
-- sous-catégorie ;
-- élément ;
-- site ;
-- département ;
-- source ;
-- actif ;
-- VIP.
+### Sans fournisseur IA
 
-## Freshservice — intégration cible
+Le Copilote reste connecté aux données Freshservice réelles mais passe en mode `bootstrap`. L’interface l’indique explicitement. Il n’est donc jamais présenté comme une génération LLM lorsqu’aucun LLM n’est configuré.
 
-Freshservice reste la source de vérité. Le navigateur ne reçoit jamais de clé API.
+## Mise à jour Freshservice — L2/HITL
 
-### Lecture ticket
-
-`GET /api/v2/tickets/{id}`
-
-### Mise à jour ticket
-
-`PUT /api/v2/tickets/{id}` uniquement après Policy Engine + approbation + Gateway.
-
-### Taxonomie des champs
-
-`GET /api/v2/ticket_form_fields`
-
-Documentation officielle :
-
-- https://api.freshservice.com/v2/
-- https://support.freshservice.com/support/solutions/articles/50000000294-how-can-i-get-the-ticket-fields-using-apis-
-
-La classification applicable doit être contrainte aux valeurs réellement configurées dans Freshservice. Une valeur absente de `ticket_form_fields` ne doit pas être présentée comme directement applicable.
-
-## ODS et performances
-
-Les analyses multi-tickets et les visualisations ne doivent pas parcourir Freshservice à chaque interaction.
-
-Cible :
+Toute action `ticket.update` nécessite une approbation humaine explicite.
 
 ```text
-Freshservice
+Proposition IA
+   ↓
+Avant / Après
+   ↓
+Agent corrige si nécessaire
+   ↓
+Policy Engine
+   ↓
+Validation humaine
    ↓
 Freshservice Gateway
    ↓
-Synchronisation incrémentale
+PUT /tickets/{id}
    ↓
-ODS PostgreSQL
+GET /tickets/{id}
    ↓
-Copilote / Visual Intelligence / modèles
+Verified + Audit
 ```
 
-Cela protège le quota Freshservice et donne une latence interactive.
+Pour le premier déploiement :
 
-## Sécurité
+```env
+FRESHSERVICE_WRITE_ENABLED=false
+```
 
-Principes :
+Après validation complète des lectures, analyses et previews :
 
-- aucune clé Freshservice dans le frontend ;
-- confiance IA ≠ permission ;
-- Policy Engine indépendant ;
-- L2 par défaut pour les modifications ;
-- preview avant écriture ;
-- idempotence ;
-- read-after-write ;
-- audit ;
-- permissions utilisateur ;
-- protection contre les prompts contenus dans tickets / KB ;
-- données vocales traitées selon la politique de l’entreprise.
+```env
+FRESHSERVICE_WRITE_ENABLED=true
+```
 
-## Feedback Loop
+## Visual Intelligence — données réelles
 
-Pour chaque proposition :
+Le Copilote peut demander des visualisations à partir de tickets Freshservice réels :
+
+- tickets par groupe ;
+- priorité ;
+- statut ;
+- catégorie ;
+- source ;
+- type ;
+- évolution quotidienne ;
+- arrivée par plage horaire ;
+- tickets à échéance proche par groupe.
+
+Important : la fonction `tickets à risque SLA` actuellement disponible dans Visual Intelligence signifie **échéance opérationnelle proche ou dépassée**. Elle n’est pas présentée comme une prédiction ML de breach tant qu’un modèle prédictif évalué n’est pas branché.
+
+Pour les analyses volumineuses, l’architecture cible reste l’ODS PostgreSQL afin d’éviter de parcourir l’API Freshservice à chaque question.
+
+## Voix production — Azure AI Speech
+
+Le frontend utilise le SDK JavaScript `microsoft-cognitiveservices-speech-sdk`.
+
+Fonctions :
+
+- reconnaissance depuis le microphone ;
+- commande vocale du Copilote ;
+- synthèse vocale des réponses ;
+- choix de voix dans l’interface.
+
+Voix proposées dans la V1 :
+
+- `fr-FR-DeniseNeural` ;
+- `fr-FR-HenriNeural` ;
+- `fr-FR-VivienneMultilingualNeural` ;
+- `fr-FR-RemyMultilingualNeural`.
+
+### Sécurité de la clé Speech
+
+Ne jamais mettre `AZURE_SPEECH_KEY` dans `NEXT_PUBLIC_*`.
+
+Le fonctionnement est :
 
 ```text
-prediction
-human_choice
-accepted / edited / rejected
-model_version
-context
-final_outcome
+Navigateur
+   ↓ POST /api/v1/copilot/voice/token
+Backend D-Clic
+   ↓ utilise AZURE_SPEECH_KEY
+Azure Speech STS
+   ↓ jeton court
+Backend
+   ↓ jeton uniquement
+Navigateur / Speech SDK
 ```
 
-Les corrections deviennent un dataset d’amélioration pour classification, routage et recommandations.
+Variables backend :
 
-## Critères d’acceptation — démonstration actuelle
+```env
+AZURE_SPEECH_KEY=...
+AZURE_SPEECH_REGION=westeurope
+AZURE_SPEECH_LANGUAGE=fr-FR
+AZURE_SPEECH_VOICE=fr-FR-DeniseNeural
+```
 
-- route `/service-ops/copilot` accessible depuis la sidebar ;
-- registre des vues visible et recherchable ;
-- sélection de tickets fonctionnelle ;
-- commande conversationnelle texte fonctionnelle ;
-- commande vocale disponible lorsque le navigateur le permet ;
-- analyse d’un ticket modifie réellement l’état UI ;
-- avant/après modifiable ;
-- confirmation obligatoire ;
-- modification simulée visible dans les propriétés du ticket ;
-- audit local alimenté ;
-- création de visualisations fonctionnelle ;
-- bar / line / donut / heatmap ;
-- modification conversationnelle du visuel ;
-- épinglage local ;
-- aucune écriture Freshservice ;
-- build Next.js vert.
+## Variables de déploiement
 
-## Étape suivante — connexion réelle
+### Backend D-Clic — secrets
 
-1. Synchroniser `ticket_form_fields` et la taxonomie.
-2. Ajouter les endpoints de lecture Ticket / Conversations / Requester / Assets derrière le Gateway.
-3. Connecter le Copilote en lecture seule.
-4. Brancher le modèle de classification métier existant.
-5. Construire l’ODS analytique.
-6. Connecter Visual Intelligence à l’ODS.
-7. Ajouter le vrai moteur LLM sous sorties structurées.
-8. Activer ensuite le `PUT ticket` uniquement avec Policy Engine + L2/HITL + vérification.
+```env
+FRESHSERVICE_DOMAIN=cerprouen.freshservice.com
+FRESHSERVICE_API_KEY=...
+FRESHSERVICE_WRITE_ENABLED=false
+FRESHSERVICE_WORKSPACE_ID=
+
+OPENAI_API_KEY=...
+OPENAI_MODEL=gpt-5-mini
+
+AZURE_SPEECH_KEY=...
+AZURE_SPEECH_REGION=westeurope
+AZURE_SPEECH_LANGUAGE=fr-FR
+AZURE_SPEECH_VOICE=fr-FR-DeniseNeural
+
+CORS_ORIGINS=https://d-clic-intelligence-beta.vercel.app
+
+DATABASE_URL=...
+REDIS_URL=...
+```
+
+### Frontend Vercel
+
+Le frontend ne reçoit qu’une URL publique :
+
+```env
+NEXT_PUBLIC_API_BASE_URL=https://<backend-dclic>
+```
+
+Ne jamais définir dans le frontend :
+
+- `NEXT_PUBLIC_FRESHSERVICE_API_KEY` ;
+- `NEXT_PUBLIC_OPENAI_API_KEY` ;
+- `NEXT_PUBLIC_AZURE_SPEECH_KEY`.
+
+## Où mettre la clé Freshservice ?
+
+La clé doit être placée dans **l’environnement qui exécute FastAPI / Freshservice Gateway**. Si le frontend est sur Vercel et le backend sur Azure Container Apps, App Service, Kubernetes, Render ou autre, la clé appartient au backend, pas au projet frontend Vercel.
+
+Le frontend Vercel appelle seulement `NEXT_PUBLIC_API_BASE_URL`.
+
+## Séquence de mise en service
+
+1. Déployer le backend avec PostgreSQL et Redis.
+2. Configurer `FRESHSERVICE_DOMAIN` et `FRESHSERVICE_API_KEY`.
+3. Garder `FRESHSERVICE_WRITE_ENABLED=false`.
+4. Configurer `CORS_ORIGINS` avec l’URL Vercel.
+5. Configurer `NEXT_PUBLIC_API_BASE_URL` sur Vercel.
+6. Vérifier `/api/v1/copilot/status`.
+7. Vérifier la liste des tickets.
+8. Ouvrir un vrai ticket et charger son contexte.
+9. Configurer `OPENAI_API_KEY` pour l’analyse LLM réelle si souhaité.
+10. Configurer Azure Speech et tester microphone + lecture vocale.
+11. Tester Preview Avant/Après.
+12. Seulement après validation, activer `FRESHSERVICE_WRITE_ENABLED=true`.
+13. Tester une modification sur un ticket de test/non critique.
+14. Vérifier le read-after-write et l’audit.
+
+## Principes de sécurité
+
+- aucune clé dans le navigateur ;
+- Freshservice uniquement via Gateway ;
+- confiance IA ≠ permission ;
+- `ticket.update` = L2/HITL ;
+- idempotence ;
+- quota central ;
+- Retry-After / 429 ;
+- audit ;
+- read-after-write ;
+- CORS explicite ;
+- taxonomie issue de Freshservice ;
+- aucune prétention de prédiction ML quand le signal est seulement déterministe.

@@ -1,5 +1,5 @@
 import { AppShell } from "../../../components/AppShell";
-import { CopilotWorkspace } from "../../../components/CopilotWorkspace";
+import { ProductionCopilotWorkspace } from "../../../components/ProductionCopilotWorkspace";
 
 const subnav = [
   { label: "Intelligence ticket", href: "/service-ops" },
@@ -17,7 +17,7 @@ export default function CopilotPage() {
       searchPlaceholder="Rechercher un ticket, une vue ou une commande..."
       subnav={subnav}
     >
-      <CopilotWorkspace />
+      <ProductionCopilotWorkspace />
     </AppShell>
   );
 }

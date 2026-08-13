@@ -8,7 +8,7 @@ class PolicyEngine:
 
     _always_blocked: ClassVar[frozenset[str]] = frozenset({"asset.delete", "user.delete"})
     _approval_actions: ClassVar[frozenset[str]] = frozenset(
-        {"ticket.close", "ticket.delete", "problem.create", "change.update"}
+        {"ticket.update", "ticket.close", "ticket.delete", "problem.create", "change.update"}
     )
 
     def evaluate(self, command: ActionCommand) -> PolicyResult:
@@ -16,7 +16,7 @@ class PolicyEngine:
             return PolicyResult(
                 decision=PolicyDecision.DENY,
                 policy_id="P-BLOCK-DESTRUCTIVE-001",
-                reason="Destructive action is blocked in the bootstrap policy.",
+                reason="Destructive action is blocked by policy.",
             )
 
         requires_approval = (
@@ -27,11 +27,11 @@ class PolicyEngine:
             return PolicyResult(
                 decision=PolicyDecision.REQUIRE_APPROVAL,
                 policy_id="P-HITL-001",
-                reason="High-impact action requires explicit human approval.",
+                reason="This action requires explicit human approval before execution.",
             )
 
         return PolicyResult(
             decision=PolicyDecision.ALLOW,
-            policy_id="P-ALLOW-LOW-RISK-001",
-            reason="Action is allowed by the current bootstrap policy.",
+            policy_id="P-ALLOW-AFTER-CONTROLS-001",
+            reason="Action is allowed after deterministic policy controls.",
         )

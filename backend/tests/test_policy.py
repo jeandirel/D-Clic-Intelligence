@@ -2,7 +2,7 @@ from app.domain.models import ActionCommand, ActionRisk, PolicyDecision
 from app.policy.engine import PolicyEngine
 
 
-def test_low_risk_update_is_allowed() -> None:
+def test_ticket_update_requires_explicit_approval() -> None:
     command = ActionCommand(
         command_id="cmd-001",
         actor_id="agent-1",
@@ -10,6 +10,20 @@ def test_low_risk_update_is_allowed() -> None:
         resource_id=42,
         payload={"priority": 2},
         risk=ActionRisk.LOW,
+    )
+    result = PolicyEngine().evaluate(command)
+    assert result.decision == PolicyDecision.REQUIRE_APPROVAL
+
+
+def test_approved_ticket_update_is_allowed() -> None:
+    command = ActionCommand(
+        command_id="cmd-001-approved",
+        actor_id="agent-1",
+        action="ticket.update",
+        resource_id=42,
+        payload={"priority": 2},
+        risk=ActionRisk.LOW,
+        approved=True,
     )
     result = PolicyEngine().evaluate(command)
     assert result.decision == PolicyDecision.ALLOW

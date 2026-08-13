@@ -28,9 +28,33 @@ class FreshserviceGateway:
         self.policy = PolicyEngine()
         self._semaphore = asyncio.Semaphore(settings.freshservice_max_concurrency)
 
-    async def get_ticket(self, ticket_id: int) -> dict:
+    async def get_ticket(self, ticket_id: int, *, include: str | None = None) -> dict:
         async with self._semaphore:
-            return await self.client.get_ticket(ticket_id)
+            return await self.client.get_ticket(ticket_id, include=include)
+
+    async def list_tickets(self, **kwargs) -> dict:
+        async with self._semaphore:
+            return await self.client.list_tickets(**kwargs)
+
+    async def filter_tickets(self, query: str, **kwargs) -> dict:
+        async with self._semaphore:
+            return await self.client.filter_tickets(query, **kwargs)
+
+    async def get_ticket_conversations(self, ticket_id: int, **kwargs) -> dict:
+        async with self._semaphore:
+            return await self.client.get_ticket_conversations(ticket_id, **kwargs)
+
+    async def get_ticket_fields(self, **kwargs) -> dict:
+        async with self._semaphore:
+            return await self.client.get_ticket_fields(**kwargs)
+
+    async def list_groups(self, **kwargs) -> dict:
+        async with self._semaphore:
+            return await self.client.list_groups(**kwargs)
+
+    async def list_agents(self, **kwargs) -> dict:
+        async with self._semaphore:
+            return await self.client.list_agents(**kwargs)
 
     async def execute(self, command: ActionCommand) -> GatewayResult:
         correlation_id = command.correlation_id or command.command_id
