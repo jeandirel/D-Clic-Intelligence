@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import httpx
 from fastapi import APIRouter, HTTPException, Query, Request
 
 from app.data.repositories import IdempotencyConflict
@@ -157,5 +158,5 @@ async def issue_speech_token(request: Request) -> SpeechTokenResponse:
         return await AzureSpeechService(request.app.state.runtime.settings).issue_token()
     except SpeechConfigurationError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
-    except httpx.HTTPError as exc:  # type: ignore[name-defined]
+    except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail=f"Azure Speech token error: {exc}") from exc
