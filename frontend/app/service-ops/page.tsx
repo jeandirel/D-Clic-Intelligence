@@ -3,6 +3,7 @@ import { Chip, GlassCard, PrimaryButton, Progress, SecondaryButton } from "../..
 
 const subnav = [
   { label: "Intelligence ticket", href: "/service-ops", active: true },
+  { label: "Copilote Agent", href: "/service-ops/copilot" },
   { label: "Charge & capacité", href: "/service-ops/workload" },
   { label: "Connaissances", href: "/service-ops/knowledge" },
   { label: "Actions IA", href: "/service-ops/actions" },
