@@ -57,9 +57,10 @@ class FreshserviceClient:
         method: str,
         path: str,
         *,
+        params: dict[str, Any] | None = None,
         json_payload: dict[str, Any] | None = None,
         emergency: bool = False,
-    ) -> dict:
+    ) -> dict[str, Any]:
         endpoint = path.split("/", 1)[0]
         retries = self.settings.freshservice_max_retries
 
@@ -71,6 +72,7 @@ class FreshserviceClient:
                     method,
                     self._url(path),
                     auth=self._auth(),
+                    params=params,
                     json=json_payload,
                 )
             except httpx.HTTPError as exc:
@@ -111,16 +113,82 @@ class FreshserviceClient:
 
             if response.status_code >= 400:
                 raise FreshserviceError(
-                    f"Freshservice {method} failed: {response.status_code} {response.text[:300]}"
+                    f"Freshservice {method} failed: {response.status_code} {response.text[:500]}"
                 )
-            return response.json()
+
+            if response.status_code == 204 or not response.content:
+                return {}
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise FreshserviceError("Unexpected Freshservice response shape")
+            return payload
 
         raise FreshserviceError("Freshservice request failed after retries")
 
-    async def get_ticket(self, ticket_id: int) -> dict:
-        return await self._request("GET", f"tickets/{ticket_id}")
+    async def get_ticket(self, ticket_id: int, *, include: str | None = None) -> dict[str, Any]:
+        params = {"include": include} if include else None
+        return await self._request("GET", f"tickets/{ticket_id}", params=params)
 
-    async def update_ticket(self, ticket_id: int, payload: dict, *, emergency: bool = False) -> dict:
+    async def list_tickets(
+        self,
+        *,
+        page: int = 1,
+        per_page: int = 30,
+        updated_since: str | None = None,
+        workspace_id: int | None = None,
+        include: str | None = None,
+        ticket_type: str | None = None,
+        email: str | None = None,
+        filter_name: str | None = None,
+    ) -> dict[str, Any]:
+        params: dict[str, Any] = {"page": page, "per_page": per_page, "order_type": "desc"}
+        if updated_since:
+            params["updated_since"] = updated_since
+        if workspace_id is not None:
+            params["workspace_id"] = workspace_id
+        if include:
+            params["include"] = include
+        if ticket_type:
+            params["type"] = ticket_type
+        if email:
+            params["email"] = email
+        if filter_name:
+            params["filter"] = filter_name
+        return await self._request("GET", "tickets", params=params)
+
+    async def filter_tickets(
+        self,
+        query: str,
+        *,
+        page: int = 1,
+        workspace_id: int | None = None,
+    ) -> dict[str, Any]:
+        normalized = query.strip()
+        if not (normalized.startswith('"') and normalized.endswith('"')):
+            normalized = f'"{normalized}"'
+        params: dict[str, Any] = {"query": normalized, "page": page}
+        if workspace_id is not None:
+            params["workspace_id"] = workspace_id
+        return await self._request("GET", "tickets/filter", params=params)
+
+    async def get_ticket_conversations(self, ticket_id: int, *, page: int = 1, per_page: int = 30) -> dict[str, Any]:
+        return await self._request(
+            "GET",
+            f"tickets/{ticket_id}/conversations",
+            params={"page": page, "per_page": per_page},
+        )
+
+    async def get_ticket_fields(self, *, workspace_id: int | None = None) -> dict[str, Any]:
+        params = {"workspace_id": workspace_id} if workspace_id is not None else None
+        return await self._request("GET", "ticket_form_fields", params=params)
+
+    async def list_groups(self, *, page: int = 1, per_page: int = 100) -> dict[str, Any]:
+        return await self._request("GET", "groups", params={"page": page, "per_page": per_page})
+
+    async def list_agents(self, *, page: int = 1, per_page: int = 100) -> dict[str, Any]:
+        return await self._request("GET", "agents", params={"page": page, "per_page": per_page})
+
+    async def update_ticket(self, ticket_id: int, payload: dict, *, emergency: bool = False) -> dict[str, Any]:
         return await self._request(
             "PUT",
             f"tickets/{ticket_id}",
