@@ -60,11 +60,12 @@ export function AppShell({
         </nav>
 
         <div className="sidebar-spacer" />
-        <Link className="deploy-button" href="/demo">
-          <span className="material-symbols-outlined">slideshow</span>
-          Lancer la démonstration
+        <Link className="deploy-button" href="/service-ops/copilot">
+          <span className="material-symbols-outlined">smart_toy</span>
+          Ouvrir le Copilote Agent
         </Link>
         <div className="sidebar-footer">
+          <Link href="/demo"><span className="material-symbols-outlined">slideshow</span>Mode démonstration</Link>
           <a href="#"><span className="material-symbols-outlined">help</span>Support</a>
           <a href="#"><span className="material-symbols-outlined">terminal</span>Journaux</a>
         </div>
