@@ -414,7 +414,7 @@ export function CopilotWorkspace() {
   }
 
   function assistant(text: string) {
-    setMessages((items) => [...items, { id: Date.now() + Math.random(), role: "assistant", text }].slice(-14));
+    setMessages((items) => [...items, { id: Date.now() + Math.random(), role: "assistant" as const, text }].slice(-14));
     speak(text);
   }
 
@@ -533,7 +533,7 @@ export function CopilotWorkspace() {
   function processCommand(raw: string) {
     const text = raw.trim();
     if (!text) return;
-    setMessages((items) => [...items, { id: Date.now() + Math.random(), role: "user", text }].slice(-14));
+    setMessages((items) => [...items, { id: Date.now() + Math.random(), role: "user" as const, text }].slice(-14));
     setCommand("");
     const query = normalizeText(text);
 
